@@ -1,4 +1,4 @@
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 from waitress import serve
 
 app = Flask(__name__)
@@ -12,10 +12,9 @@ def query_endpoint():
     # Get the data from the request
     data = request.data.decode('utf-8')
 
-    # Your code to process the input string (data) goes here
-    # You can perform any necessary operations on the 'data' variable
+    # Work with the data string
 
-    # Example: You can simply return the received data as JSON
+    # Example: Return the received data as JSON
     response = {'message': 'Received string:', 'data': data}
     return jsonify(response), 200
 
