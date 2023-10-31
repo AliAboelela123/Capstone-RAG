@@ -10,9 +10,10 @@ def hello():
 @app.route('/query', methods=['POST'])
 def query_endpoint():
     # Get the data from the request
-    data = request.data.decode('utf-8')
-
-    # Work with the data string
+    try:
+        data = request.data.decode('utf-8')
+    except:
+        print("An exception occurred")
 
     # Example: Return the received data as JSON
     response = {'message': 'Received string:', 'data': data}
@@ -20,7 +21,4 @@ def query_endpoint():
 
 
 def start_server():
-    serve(app, host='127.0.0.1', port=5000)
-
-if __name__ == '__main__':
     serve(app, host='127.0.0.1', port=5000)
