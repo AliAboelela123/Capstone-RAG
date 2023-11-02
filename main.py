@@ -1,6 +1,6 @@
 import multiprocessing
 import webbrowser
-import server
+import serverLLM.server as server
 
 def run_server():
     server.start_server() # Call the server script
@@ -14,7 +14,7 @@ if __name__ == '__main__':
     # The flask server & react app are blocking processes, so we must use the multiprocessing library
 
     # First we open the browser to where the React app will be
-    webbrowser.open_new_tab('http://localhost:5000')
+    webbrowser.open_new_tab('http://localhost:5000/hello')
     
     # Bind the first process to the run_server function
     server_process = multiprocessing.Process(target=run_server)
