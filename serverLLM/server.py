@@ -56,33 +56,42 @@ def query_endpoint():
     Endpoint to receive queries and provide LLM responses.
     """
     try:
-        data = request.get_json()
-        query = data['query']
-        complexity_level = data['complexity']
+        # Check if the POST request has the file part
+        if 'query' not in request.form:
+            return jsonify({'error': "No query provided."}), 400
+
+        query = request.form['query']
+        complexity_level = request.form.get('complexity', 'Expert')
         complexity = session.get('complexity', complexity_level)
 
+        # This will hold the names of the files saved
         pdf_files = []
-        if 'pdfFiles' in request.files:
-            files = request.files.getlist('pdfFiles')
-            for file in files:
-                if file and allowed_file(file.filename):
-                    filename = secure_filename(file.filename)
-                    file.save(os.path.join('/path/to/upload/directory', filename))
-                    pdf_files.append(filename)
 
+        # File Processing
+        # if 'pdfFiles' in request.files:
+        #     files = request.files.getlist('pdfFiles')
+        #     for file in files:
+        #         if file and allowed_file(file.filename):
+        #             filename = secure_filename(file.filename)
+        #             file_path = os.path.join('/path/to/upload/directory', filename)
+        #             file.save(file_path)
+        #             pdf_files.append(file_path)
+
+        # If you need to use files for context or other reasons, process them here
         context = get_best_chunks(query)
         llm_response = get_response(query, complexity, context)
         
         print(f"Received LLM Response: {llm_response}")  # Log the LLM Response
         
         if llm_response:
-            return jsonify({'response': llm_response}), 200
+            return jsonify({'response': llm_response, 'files': pdf_files}), 200
         else:
             print("No Response from LLMChain.")
             return jsonify({'error': "No Response from the Language Model."}), 500
     except Exception as e:
         print(f"An exception occurred: {e}")
-        return jsonify({'error': "An Error Occurred While Processing the Query"}), 400
+        return jsonify({'error': str(e)}), 400
+
 
 @app.route('/upload_pdf', methods=['POST'])
 def upload_pdf():

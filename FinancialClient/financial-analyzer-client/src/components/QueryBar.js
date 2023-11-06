@@ -128,14 +128,17 @@ const QueryBar = ({ addMessage, uploadPDF, clearPDF, uploadedPDFs, setUploadedPD
   const handleSendClick = async () => {
     setIsLoading(true);
 
-    // FormData to hold Text Query and PDF Files
-    const formData = new FormData();
-  
     try {
+      // FormData to hold Text Query and PDF Files
+      const formData = new FormData();
 
       // Append Text Query to formData
       formData.append('query', textareaRef.current.value);
-      formData.append('complexity', selectedLevel);
+      if (selectedLevel==null){
+        formData.append('complexity', "Expert");
+      } else {
+        formData.append('complexity', selectedLevel || 'Expert');
+      }
 
       // Check if there are any PDF files uploaded
       const hasPDFs = uploadedPDFs.length > 0;
@@ -156,10 +159,7 @@ const QueryBar = ({ addMessage, uploadPDF, clearPDF, uploadedPDFs, setUploadedPD
 
       const queryResponse = await fetch('http://127.0.0.1:5000/query', {
         method: 'POST',
-        body: JSON.stringify({ query: textareaRef.current.value }),
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        body: formData,
       });
   
       if (queryResponse.ok) {
