@@ -44,9 +44,10 @@ conversation = LLMChain(
 def get_response(query, complexity, context=None):
     # Set the system message (complexity & context)
     system_msg = "You are a friendly chatbot having a conversation with a human. You are an expert in finance. The user you are speaking with has a " + complexity + " understanding of finance."
-    if context == None:
-        context_msg = ""
-    else:
+    context_msg = ""
+    if context:
         context_msg = "The user has uploaded a document. A relevant excerpt from the document has been provided. It may assist you with the user's next question: <START_EXCERPT>" + context + " <END_EXCERPT>"
+    
     result = conversation({"question": query, "system_msg": system_msg, "context": context_msg})
-    return result["text"]
+    
+    return result["text"] if "text" in result else None

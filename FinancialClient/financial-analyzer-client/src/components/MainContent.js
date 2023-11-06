@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Box, styled, GlobalStyles } from '@mui/material';
 
-const MainContentBox = styled(Box)({
+const MainContentBox = styled(Box)(({ paddingBottom }) => ({
   display: 'flex',
   flexDirection: 'column',
   alignItems: 'flex-end',
@@ -9,11 +9,10 @@ const MainContentBox = styled(Box)({
   overflowX: 'hidden',
   padding: '1rem',
   paddingTop: '60px',
-  paddingBottom: '90px',
+  paddingBottom: paddingBottom,
   width: '100%',
   boxSizing: 'border-box',
-  maxHeight: 'calc(100vh - 100 - 100)', 
-});
+}));
 
 const MessageBox = styled(Box)(({ theme }) => ({
   marginBottom: '1rem',
@@ -41,9 +40,33 @@ const QueryBox = styled(Box)({
   fontFamily: 'Poppins, sans-serif',
 });
 
-const MainContent = ({ messages }) => {
+function formatTextWithLineBreaks(text) {
+  text.replace(/\\n/g, '\n');
+  return text.split('\n').map((line, index, array) => (
+    <React.Fragment key={index}>
+      {line}
+      {index !== array.length - 1 && <br />}
+    </React.Fragment>
+  ));
+}
+
+const MainContent = ({ messages, addMessage }) => {
+  const [queryBarHeight, setQueryBarHeight] = useState(0);
+  const queryBarRef = useRef(null); 
+
+  useEffect(() => {
+    const updateQueryBarHeight = () => {
+      const height = queryBarRef.current ? queryBarRef.current.getBoundingClientRect().height : 120;
+      setQueryBarHeight(height);
+    };
+
+    updateQueryBarHeight();
+    window.addEventListener('resize', updateQueryBarHeight);
+    return () => window.removeEventListener('resize', updateQueryBarHeight);
+  }, [messages]);
+
   return (
-    <MainContentBox>
+    <MainContentBox paddingBottom={`${queryBarHeight}px`}>
       <GlobalStyles styles={{
         '@global': {
           '@font-face': {
@@ -57,7 +80,7 @@ const MainContent = ({ messages }) => {
           key={index}
           component={message.type === 'response' ? ResponseBox : QueryBox}
         >
-          {message.text}
+          <div>{formatTextWithLineBreaks(message.text)}</div>
         </MessageBox>
       ))}
     </MainContentBox>
