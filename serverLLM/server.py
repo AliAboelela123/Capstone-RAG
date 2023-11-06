@@ -1,5 +1,5 @@
 """
-Flask server module to handle requests and provide LLM responses.
+Flask Server Module to Handle Requests and Provide LLM Responses.
 """
 
 from flask import Flask, jsonify, request, session
@@ -35,28 +35,12 @@ def hello():
     return jsonify({"message": "Hello world!"})
 
 
-@app.route('/complexity', methods=['POST'])
-def set_complexity():
-    """
-    Set the complexity level for the LLM responses.
-    """
-    try:
-        data = request.get_json()
-        complexity = data.get('complexity', 'intermediate')
-        session['complexity'] = complexity
-        return jsonify({'message': 'Complexity set successfully'}), 200
-    except Exception as e:
-        print(f"An exception occurred: {e}")
-        return jsonify({'error': "An error occurred while setting complexity"}), 400
-
-
 @app.route('/query', methods=['POST'])
 def query_endpoint():
     """
     Endpoint to receive queries and provide LLM responses.
     """
     try:
-        # Check if the POST request has the file part
         if 'query' not in request.form:
             return jsonify({'error': "No query provided."}), 400
 
@@ -64,7 +48,6 @@ def query_endpoint():
         complexity_level = request.form.get('complexity', 'Expert')
         complexity = session.get('complexity', complexity_level)
 
-        # This will hold the names of the files saved
         pdf_files = []
 
         # File Processing
@@ -77,12 +60,11 @@ def query_endpoint():
         #             file.save(file_path)
         #             pdf_files.append(file_path)
 
-        # If you need to use files for context or other reasons, process them here
         context = get_best_chunks(query)
         llm_response = get_response(query, complexity, context)
-        
+
         print(f"Received LLM Response: {llm_response}")  # Log the LLM Response
-        
+
         if llm_response:
             return jsonify({'response': llm_response, 'files': pdf_files}), 200
         else:
@@ -91,29 +73,6 @@ def query_endpoint():
     except Exception as e:
         print(f"An exception occurred: {e}")
         return jsonify({'error': str(e)}), 400
-
-
-@app.route('/upload_pdf', methods=['POST'])
-def upload_pdf():
-    """
-    Endpoint to upload and process PDF files.
-    """
-    try:
-        if 'file' not in request.files:
-            return jsonify({'error': 'No file part in the request'}), 400
-
-        file = request.files['file']
-
-        if file and allowed_file(file.filename):
-            # Processing code goes here
-
-            return jsonify(
-                {'message': 'PDF file uploaded and processed successfully'}), 200
-        else:
-            return jsonify({'error': 'Unsupported file format'}), 400
-    except Exception as e:
-        print(f"An exception occurred: {e}")
-        return jsonify({'error': str(e)}), 500
 
 
 def start_server():
