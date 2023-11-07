@@ -21,3 +21,6 @@ share/python-wheels/
 *.egg
 
 serverLLM/config.py
+install.sh
+*.spec
+**/__pycache__/
