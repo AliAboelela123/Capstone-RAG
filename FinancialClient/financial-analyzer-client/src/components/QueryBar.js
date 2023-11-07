@@ -1,7 +1,11 @@
-import React, { useEffect, useRef } from 'react';
-import { Button, TextField, Box, styled, Typography, ThemeProvider, createTheme } from '@mui/material';
+import React, { useState, useEffect, useRef } from 'react';
+import {
+  Button, TextField, Box, styled, Typography, ThemeProvider, createTheme, IconButton, Paper
+} from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
 import PublishIcon from '@mui/icons-material/Publish';
+import CloseIcon from '@mui/icons-material/Close';
+import CircularProgress from '@mui/material/CircularProgress';
 
 const theme = createTheme({
   typography: {
@@ -51,14 +55,43 @@ const StyledButton = styled(Button)({
 
 const StyledTextField = styled(TextField)({
   flex: 1,
+  backgroundColor: 'white',
   margin: '0 1rem',
   '& .MuiInputBase-root': {
     borderRadius: '0.5rem',
   },
 });
 
-const QueryBar = () => {
+const StyledIconButton = styled(IconButton)({
+  color: '#B76E79',
+  '&:hover': {
+    backgroundColor: '#f4f4f4',
+  },
+});
+
+const StyledPaper = styled(Paper)({
+  marginTop: '1rem',
+  padding: '0.5rem',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  maxWidth: '100%',
+  overflow: 'hidden',
+  whiteSpace: 'nowrap',
+  textOverflow: 'ellipsis',
+});
+
+const StyledFileName = styled(Typography)({
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap',
+});
+
+const QueryBar = ({ addMessage, uploadPDF, clearPDF, uploadedPDFs, setUploadedPDFs, selectedLevel }) => {
+  const [isLoading, setIsLoading] = useState(false);
   const textareaRef = useRef(null);
+  const fileInputRef = useRef(null);
+  const queryBarRef = useRef(null);
 
   useEffect(() => {
     const currentRef = textareaRef.current;
@@ -81,28 +114,126 @@ const QueryBar = () => {
     };
   }, []);
 
+  const handleUploadClick = () => {
+    fileInputRef.current.click();
+  };
+
+  const handleFileChange = (event) => {
+    const files = event.target.files;
+    if (files.length > 0) {
+      uploadPDF(files[0]);
+    }
+  };
+
+  const handleSendClick = async () => {
+    setIsLoading(true);
+
+    try {
+      // FormData to hold Text Query and PDF Files
+      const formData = new FormData();
+
+      // Append Text Query to formData
+      formData.append('query', textareaRef.current.value);
+      if (selectedLevel==null){
+        formData.append('complexity', "Expert");
+      } else {
+        formData.append('complexity', selectedLevel || 'Expert');
+      }
+
+      // Check if there are any PDF files uploaded
+      const hasPDFs = uploadedPDFs.length > 0;
+    
+      // Append each PDF File to formData only if there are PDF files
+      if (hasPDFs) {
+        uploadedPDFs.forEach((file) => {
+          formData.append('pdfFiles', file, file.name);
+        });
+      }
+
+      // Send the Text Query
+      if (hasPDFs) {
+        for (const file of uploadedPDFs) {
+          formData.append('pdfFiles', file, file.name);
+        }
+      }
+
+      const queryResponse = await fetch('http://127.0.0.1:5000/query', {
+        method: 'POST',
+        body: formData,
+      });
+  
+      if (queryResponse.ok) {
+        const responseText = await queryResponse.text();
+        
+        const queryMessage = {
+          type: 'query',
+          text: `${textareaRef.current.value}${hasPDFs ? `\n${uploadedPDFs.map(file => file.name).join(', ')}` : ''}`,
+        };
+      
+        const responseMessage = {
+          type: 'response',
+          text: JSON.parse(responseText).response,
+        };
+      
+        addMessage(queryMessage);
+        addMessage(responseMessage);
+        
+        setIsLoading(false);
+        textareaRef.current.value = '';
+        setUploadedPDFs([]);
+      }
+    } catch (error) {
+      console.error('Network Error:', error);
+      setIsLoading(false);
+    }
+  };  
+
   return (
-    <StyledBox>
-      <StyledTextField
-        multiline
-        placeholder="Type your Query here..."
-        inputRef={textareaRef}
-        InputProps={{ disableUnderline: true }}
+    <Box ref={queryBarRef}>
+      <StyledBox>
+        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+          <StyledTextField
+            multiline
+            placeholder="Type your Query here..."
+            inputRef={textareaRef}
+            disabled={isLoading}
+          />
+          <Box display="flex" flexDirection="column" alignItems="start" pl={2} mt={1}>
+            {uploadedPDFs.map((file, index) => (
+              <StyledPaper key={index}>
+                <StyledFileName variant="body2" title={file.name}>
+                  {file.name}
+                </StyledFileName>
+                <StyledIconButton size="small" onClick={() => clearPDF(index)} disabled={isLoading}>
+                  <CloseIcon />
+                </StyledIconButton>
+              </StyledPaper>
+            ))}
+          </Box>
+        </Box>
+        <StyledButton variant="contained" endIcon={<PublishIcon />} onClick={handleUploadClick} disabled={isLoading}>
+          <Typography variant="button">Upload PDF</Typography>
+        </StyledButton>
+        <StyledButton
+          variant="contained"
+          endIcon={isLoading ? <CircularProgress size={20} /> : <SendIcon />}
+          onClick={handleSendClick}
+          disabled={isLoading}
+        >
+          <Typography variant="button">{isLoading ? 'Sending...' : 'Send'}</Typography>
+        </StyledButton>
+      </StyledBox>
+      <input
+        type="file"
+        accept="application/pdf"
+        style={{ display: 'none' }}
+        ref={fileInputRef}
+        onChange={handleFileChange}
+        multiple
+        disabled={isLoading}
       />
-      <StyledButton variant="contained" endIcon={<PublishIcon />}>
-        <Typography variant="button">Upload PDF</Typography>
-      </StyledButton>
-      <StyledButton variant="contained" endIcon={<SendIcon />}>
-        <Typography variant="button">Send</Typography>
-      </StyledButton>
-    </StyledBox>
+    </Box>
   );
 };
 
-export default function App() {
-  return (
-    <ThemeProvider theme={theme}>
-      <QueryBar />
-    </ThemeProvider>
-  );
-}
+export default QueryBar;

@@ -15,11 +15,11 @@ const StyledHeader = styled(Box)(({ theme }) => ({
   alignItems: 'center',
 }));
 
-const Header = () => {
+const Header = ({ selectedLevel, setSelectedLevel }) => {
   return (
     <StyledHeader>
       <Typography variant="h6" style={{ marginLeft: 20, marginTop: 10, marginBottom: 10, fontFamily: "Poppins", fontWeight: 600 }}>Financial LLM Analyzer</Typography>
-      <Dropdown />
+      <Dropdown selectedLevel={selectedLevel} setSelectedLevel={setSelectedLevel} />
     </StyledHeader>
   );
 };

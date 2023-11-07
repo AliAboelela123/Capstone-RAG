@@ -1,31 +1,36 @@
 import multiprocessing
 import webbrowser
+import subprocess
 import serverLLM.server as server
 
+
 def run_server():
-    server.start_server() # Call the server script
+    """
+    Start the Backend Server and have CORS enabled.
+    """
+    server.start_server()
+
 
 def run_app():
-    # Python code to run "npm start" or whatever the command is to run the react app
-    #webbrowser.open_new_tab('http://localhost:5000')
-    pass
+    """
+    Start the Frontend Application.
+    """
+    subprocess.call(["npm", "start"],
+                    cwd="FinancialClient/financial-analyzer-client")
+
 
 if __name__ == '__main__':
-    # The flask server & react app are blocking processes, so we must use the multiprocessing library
+    # Open a Web Browser tab for the Frontend Interface.
+    webbrowser.open_new('http://localhost:3000')
 
-    # First we open the browser to where the React app will be
-    webbrowser.open_new_tab('http://localhost:5000/hello')
-    
-    # Bind the first process to the run_server function
+    # Set Up and Start the Backend Server Process.
     server_process = multiprocessing.Process(target=run_server)
-    
-    # Bind the second process to the run_app function
+
+    # Set Up and Start the Frontend Application Process.
     app_process = multiprocessing.Process(target=run_app)
 
-    # Start the server & app process
     server_process.start()
     app_process.start()
 
     server_process.join()
     app_process.join()
-    

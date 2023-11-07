@@ -1,70 +1,86 @@
+"""
+Flask Server Module to Handle Requests and Provide LLM Responses.
+"""
+
 from flask import Flask, jsonify, request, session
+from flask_cors import CORS
 from waitress import serve
+from werkzeug.utils import secure_filename
+import os
+
 from serverLLM.LLMChain import get_response
 from serverLLM.embeddings_db import get_best_chunks
-from serverLLM.utilities import allowed_file 
+from serverLLM.utilities import allowed_file
 
+# Flask app setup
 app = Flask(__name__)
 app.secret_key = 'A0Zr98j/3yX R~XHH!jmN]LWX/,?RT'
 
+# Setup CORS
+CORS(app)
+
+ALLOWED_EXTENSIONS = {'pdf'}
+
+
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
 @app.route('/hello')
 def hello():
-    return "<h1>Hello world!"
+    """
+    Test endpoint to check if the server is responding.
+    """
+    return jsonify({"message": "Hello world!"})
 
-@app.route('/complexity', methods=['POST'])
-def set_complexity():
-    try:
-        print('A')
-        data = request.get_json()
-        print('B')
-        if 'complexity' in data:
-            print('C')
-            session['complexity'] = data['complexity']
-            print('E')
-        else:
-            print('D')
-            session['complexity'] = 'intermediate'
-        return jsonify({'message': 'success'}), 200
-    except:
-        print("An exception occurred")
-        return jsonify({'message': "Error"}), 400
 
 @app.route('/query', methods=['POST'])
 def query_endpoint():
-    # Get the data from the request
+    """
+    Endpoint to receive queries and provide LLM responses.
+    """
     try:
-        data = request.get_json()
-        query = data['query']
-        complexity = session.get('complexity', 'intermediate')
+        if 'query' not in request.form:
+            return jsonify({'error': "No query provided."}), 400
+
+        query = request.form['query']
+        complexity_level = request.form.get('complexity', 'Expert')
+        complexity = session.get('complexity', complexity_level)
+
+        pdf_files = []
+
+        # File Processing
+        # if 'pdfFiles' in request.files:
+        #     files = request.files.getlist('pdfFiles')
+        #     for file in files:
+        #         if file and allowed_file(file.filename):
+        #             filename = secure_filename(file.filename)
+        #             file_path = os.path.join('/path/to/upload/directory', filename)
+        #             file.save(file_path)
+        #             pdf_files.append(file_path)
+
         context = get_best_chunks(query)
-        LLMresponse = get_response(query, complexity, context)
-        # Example: Return the received data as JSON
-        response = {'ChatResponse': LLMresponse}
-        return jsonify(response), 200
-    
-    except:
-        print("An exception occurred")
-        return jsonify({'ChatResponse': "Error"}), 400
+        llm_response = get_response(query, complexity, context)
 
-@app.route('/upload_pdf', methods=['POST'])
-def upload_pdf():
-    try:
-        if 'file' not in request.files:
-            return jsonify({'error': 'No file part'}), 400
+        print(f"Received LLM Response: {llm_response}")  # Log the LLM Response
 
-        file = request.files.get("file_upload") # Note to Nelson: The name of the input field for the file upload must match this
-
-        if file and allowed_file(file.filename):
-            # Kevin put your code here. The pdf is in the "file" object.
-            # Ask ChatGPT "Flask request.files methods" to get more information on
-            # how you can work with this file object
-
-            return jsonify({'message': 'PDF file uploaded successfully'}), 200
+        if llm_response:
+            return jsonify({'response': llm_response, 'files': pdf_files}), 200
         else:
-            return jsonify({'error': 'Invalid file format (PDF required)'}), 400
-
+            print("No Response from LLMChain.")
+            return jsonify({'error': "No Response from the Language Model."}), 500
     except Exception as e:
-        return jsonify({'error': "Error"}), 500
+        print(f"An exception occurred: {e}")
+        return jsonify({'error': str(e)}), 400
+
 
 def start_server():
+    """
+    Start the Flask server with waitress as the production server.
+    """
     serve(app, host='127.0.0.1', port=5000)
+
+
+if __name__ == '__main__':
+    start_server()

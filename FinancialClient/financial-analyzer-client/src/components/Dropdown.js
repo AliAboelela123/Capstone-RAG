@@ -10,16 +10,15 @@ const StyledButton = styled(Button)({
   marginRight: 10,
 });
 
-function Dropdown() {
+function Dropdown({ selectedLevel, setSelectedLevel }) {
   const [anchorEl, setAnchorEl] = useState(null);
-  const [selectedLevel, setSelectedLevel] = useState('Beginner'); // Defaulting to 'Beginner'
 
   const handleClick = (event) => {
     setAnchorEl(event.currentTarget);
   };
 
   const handleClose = (level) => {
-    if (level) setSelectedLevel(level); // Update the level if one was selected
+    if (level) setSelectedLevel(level);
     setAnchorEl(null);
   };
 
@@ -52,7 +51,7 @@ function Dropdown() {
         PaperProps={{
           style: {
             borderRadius: 6,
-            boxShadow: '0px 4px 20px rgba(0, 0, 0, 0.1)', // subtle shadow for elegance
+            boxShadow: '0px 4px 20px rgba(0, 0, 0, 0.1)',
           }
         }}
       >
