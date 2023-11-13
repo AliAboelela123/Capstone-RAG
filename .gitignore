@@ -24,3 +24,5 @@ serverLLM/config.py
 install.sh
 *.spec
 **/__pycache__/
+serverLLM/__pycache__
+serverLLM/uploads
