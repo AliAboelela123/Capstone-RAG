@@ -43,47 +43,45 @@ def hello():
 
 @app.route('/query', methods=['POST'])
 def query_endpoint():
-    """
-    Endpoint to receive queries and provide LLM responses.
-    """
     try:
-        if 'query' not in request.form:
-            return jsonify({'error': "No query provided."}), 400
-
-        query = request.form['query']
-        complexity_level = request.form.get('complexity', 'Expert')
-        complexity = session.get('complexity', complexity_level)
-
+        query = request.form.get('query')
+        if not query:
+            return jsonify({'error': "No Query Provided."}), 400
+        complexity = request.form.get('complexity', 'Expert')
         pdf_files = []
+        context = None
 
-        # File Processing
+        print("Files Received:", request.files)
+
+        # Check for PDF Files in the Request
         if 'pdfFiles' in request.files:
             files = request.files.getlist('pdfFiles')
             for file in files:
+                print("Processing File:", file.filename)
+
                 if file and allowed_file(file.filename):
                     filename = secure_filename(file.filename)
                     file_path = os.path.join(upload_directory, filename)
-                    print("File Path: " + file_path)
-                    print("File Name: " + filename)
                     file.save(file_path)
                     pdf_files.append(file_path)
+                    # Assuming store_embeddings function returns context
                     store_embeddings(file_path)
-                    print("File uploaded and processed successfully.")
-
-    
+                    # Debug print
+                    print("File Saved:", file_path)
+        
         context = get_best_chunks(query)
         llm_response = get_response(query, complexity, context)
 
-        print(f"Received LLM Response: {llm_response}")  # Log the LLM Response
-
         if llm_response:
-            return jsonify({'response': llm_response, 'files': pdf_files}), 200
+            response_data = {'response': llm_response}
+            if pdf_files:
+                response_data['files'] = [os.path.basename(f) for f in pdf_files]
+            return jsonify(response_data), 200
         else:
-            print("No Response from LLMChain.")
-            return jsonify({'error': "No Response from the Language Model."}), 500
+            return jsonify({'error': "No Response From the Language Model."}), 500
     except Exception as e:
-        print(f"An exception occurred: {e}")
-        return jsonify({'error': str(e)}), 400
+        print(f"An Exception Occurred: {e}")
+        return jsonify({'error': str(e)}), 500
 
 
 def start_server():
