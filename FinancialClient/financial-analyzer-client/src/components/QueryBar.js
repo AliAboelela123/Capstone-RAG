@@ -1,29 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
-  Button, TextField, Box, styled, Typography, ThemeProvider, createTheme, IconButton, Paper
+  Button, TextField, Box, styled, Typography, IconButton, Paper
 } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
 import PublishIcon from '@mui/icons-material/Publish';
 import CloseIcon from '@mui/icons-material/Close';
 import CircularProgress from '@mui/material/CircularProgress';
-
-const theme = createTheme({
-  typography: {
-    fontFamily: 'Poppins, sans-serif',
-  },
-  components: {
-    MuiCssBaseline: {
-      styleOverrides: {
-        '@global': {
-          '@font-face': {
-            fontFamily: 'Poppins',
-            src: `url(https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap)`,
-          },
-        },
-      },
-    },
-  },
-});
 
 const StyledBox = styled(Box)({
   display: 'flex',
@@ -126,6 +108,11 @@ const QueryBar = ({ addMessage, uploadPDF, clearPDF, uploadedPDFs, setUploadedPD
   };
 
   const handleSendClick = async () => {
+    if (textareaRef.current.value.trim() === '') {
+      alert('Please Enter a Query.');
+      return;
+    }
+    
     setIsLoading(true);
 
     try {
@@ -133,12 +120,8 @@ const QueryBar = ({ addMessage, uploadPDF, clearPDF, uploadedPDFs, setUploadedPD
       const formData = new FormData();
 
       // Append Text Query to formData
-      formData.append('query', textareaRef.current.value);
-      if (selectedLevel==null){
-        formData.append('complexity', "Expert");
-      } else {
-        formData.append('complexity', selectedLevel || 'Expert');
-      }
+      formData.append('query', textareaRef.current.value.trim());
+      formData.append('complexity', selectedLevel || 'Expert');
 
       // Check if there are any PDF files uploaded
       const hasPDFs = uploadedPDFs.length > 0;
@@ -150,43 +133,40 @@ const QueryBar = ({ addMessage, uploadPDF, clearPDF, uploadedPDFs, setUploadedPD
         });
       }
 
-      // Send the Text Query
-      if (hasPDFs) {
-        for (const file of uploadedPDFs) {
-          formData.append('pdfFiles', file, file.name);
-        }
-      }
-
-      const queryResponse = await fetch('http://127.0.0.1:5000/query', {
+      const response = await fetch('http://127.0.0.1:5000/query', {
         method: 'POST',
         body: formData,
       });
-  
-      if (queryResponse.ok) {
-        const responseText = await queryResponse.text();
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.error) {
+          throw new Error(data.error);
+        }
         
         const queryMessage = {
           type: 'query',
           text: `${textareaRef.current.value}${hasPDFs ? `\n${uploadedPDFs.map(file => file.name).join(', ')}` : ''}`,
         };
-      
         const responseMessage = {
           type: 'response',
-          text: JSON.parse(responseText).response,
+          text: data.response,
         };
-      
+        
         addMessage(queryMessage);
         addMessage(responseMessage);
-        
-        setIsLoading(false);
-        textareaRef.current.value = '';
-        setUploadedPDFs([]);
+      } else {
+        throw new Error('Server Responded with an Error.');
       }
     } catch (error) {
-      console.error('Network Error:', error);
+      addMessage({ type: 'query', text: `Error Sending Message: ${textareaRef.current.value}` });
+      addMessage({ type: 'response', text: `Error: ${error.message}` });
+    } finally {
       setIsLoading(false);
+      textareaRef.current.value = '';
+      setUploadedPDFs([]);
     }
-  };  
+  };
 
   return (
     <Box ref={queryBarRef}>

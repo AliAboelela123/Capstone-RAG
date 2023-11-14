@@ -1,5 +1,4 @@
 import multiprocessing
-import webbrowser
 import subprocess
 import serverLLM.server as server
 
@@ -20,9 +19,6 @@ def run_app():
 
 
 if __name__ == '__main__':
-    # Open a Web Browser tab for the Frontend Interface.
-    webbrowser.open_new('http://localhost:3000')
-
     # Set Up and Start the Backend Server Process.
     server_process = multiprocessing.Process(target=run_server)
 
