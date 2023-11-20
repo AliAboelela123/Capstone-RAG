@@ -8,5 +8,5 @@ Although outside the scope of our capstone project, afer graduating we hope to i
 2. Download docker desktop, and make sure docker is running
 3. Run the command "docker-compose up --build". This will build the containers, and run them.
 4. Alternatively you can build and run in separate steps with "docker-compose build" and "docker-compose up -d"
-5. Run "docker-compose down" to take down the containers.
-6. You can now visit the application at localhost:3000.
+5. You can now visit the application at localhost:3000.
+6. Run "docker-compose down" to take down the containers.
