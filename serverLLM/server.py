@@ -2,15 +2,15 @@
 Flask Server Module to Handle Requests and Provide LLM Responses.
 """
 
-from flask import Flask, jsonify, request, session
+from flask import Flask, jsonify, request
 from flask_cors import CORS
 from waitress import serve
 from werkzeug.utils import secure_filename
 import os
 
-from serverLLM.LLMChain import get_response
-from serverLLM.embeddings_db import get_best_chunks, store_embeddings
-from serverLLM.utilities import allowed_file
+from LLMChain import get_response
+from embeddings_db import get_best_chunks, store_embeddings
+from utilities import allowed_file
 
 
 # Flask app setup
@@ -88,7 +88,7 @@ def start_server():
     """
     Start the Flask server with waitress as the production server.
     """
-    serve(app, host='127.0.0.1', port=5000)
+    serve(app, host='0.0.0.0', port=5000)
 
 
 if __name__ == '__main__':
