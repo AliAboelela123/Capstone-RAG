@@ -1,0 +1,17 @@
+version: '3.8'
+services:
+  flask-server:
+    build:
+      context: .
+      dockerfile: serverLLM/Dockerfile
+    ports:
+      - "5000:5000"  # Map ports
+    restart: "no"
+
+  react-app:
+    build:
+      context: .
+      dockerfile: FinancialClient/financial-analyzer-client/Dockerfile
+    ports:
+      - "3000:3000"  # Map ports
+    restart: "no"

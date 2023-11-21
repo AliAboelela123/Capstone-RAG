@@ -7,7 +7,7 @@ from langchain.prompts import (
 from langchain.chains import LLMChain # Library for facilitating conversations
 from langchain.chat_models import ChatOpenAI # The open AI model
 from langchain.memory import ConversationBufferMemory # Giving our model memory of the chat history
-from serverLLM.config import OPEN_AI_API_KEY
+from config import OPEN_AI_API_KEY
 
 # LLM
 llm = ChatOpenAI(temperature=0, openai_api_key=OPEN_AI_API_KEY)

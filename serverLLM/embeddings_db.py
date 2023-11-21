@@ -2,7 +2,7 @@ import os
 import uuid
 import PyPDF2 
 import openai
-from serverLLM.config import OPEN_AI_API_KEY
+from config import OPEN_AI_API_KEY
 from sklearn.metrics.pairwise import cosine_similarity
 import fitz
 
