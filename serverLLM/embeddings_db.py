@@ -5,6 +5,8 @@ import openai
 from config import OPEN_AI_API_KEY
 from sklearn.metrics.pairwise import cosine_similarity
 import fitz
+import tabula
+import pandas as pd
 
 os.environ["OPENAI_API_KEY"] = OPEN_AI_API_KEY
 
@@ -40,6 +42,33 @@ def pdf_to_text(file_path):
         for page in doc:
             text_list.append(page.get_text())
     return text_list
+
+def extractCsv(file_path):
+    df_list = tabula.read_pdf(file_path, pages='all', multiple_tables=True)
+    #convert to csv 
+    for i, df in enumerate(df_list):
+        #save to currect directory
+        df.to_csv(f'./table_{i}.csv', index=False)
+
+    print("Number of files is: ", len(df_list))
+    #Return number of tables
+    return len(df_list)
+
+def csvs_to_string_and_delete(directory, num_files):
+    combined_csv_string = ""
+    for i in range(num_files):
+        file_path = os.path.join(directory, f"table_{i}.csv")
+        if os.path.exists(file_path):
+            df = pd.read_csv(file_path)
+            combined_csv_string += df.to_csv(index=False, sep='\t') + "\n"
+
+            # Delete the CSV file after converting it to a string
+            os.remove(file_path)
+            print(f"Deleted file: {file_path}")
+        else:
+            print(f"File not found: {file_path}")
+    print(combined_csv_string)
+    return combined_csv_string
 
 
 def store_embeddings(file_path):
