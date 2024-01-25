@@ -67,7 +67,7 @@ def query_endpoint():
                     numFiles = extractCsv(file_path)
                     csvString = csvs_to_string_and_delete("./", numFiles)
                     # Assuming store_embeddings function returns context
-                    store_embeddings(file_path)
+                    store_embeddings(file_path, csvString)
                     # Debug print
                     print("File Saved:", file_path)
         

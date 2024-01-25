@@ -71,12 +71,19 @@ def csvs_to_string_and_delete(directory, num_files):
     return combined_csv_string
 
 
-def store_embeddings(file_path):
+def store_embeddings(file_path, additional_text=None):
     if file_path is None:
         return False
 
     # Load the PDF and split it into pages
     string_chunks = pdf_to_text(file_path)
+
+    # Add the additional CSV text to the string_chunks with a contextual message
+    if additional_text:
+        csv_intro_message = "Here are the tables of the PDF in CSV format:\n"
+        combined_csv_text = csv_intro_message + additional_text
+        string_chunks.append(combined_csv_text)
+
     # Get embedding model
     for chunk in string_chunks:
         if not chunk.strip():
