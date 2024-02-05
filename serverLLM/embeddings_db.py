@@ -2,7 +2,7 @@ import os
 import uuid
 import PyPDF2 
 import openai
-from config import OPEN_AI_API_KEY
+from config import OPEN_AI_API_KEY, CHUNK_SIZE
 from sklearn.metrics.pairwise import cosine_similarity
 import fitz
 import tabula
@@ -36,12 +36,27 @@ def get_embedding(chunk):
         raise
 
 
-def pdf_to_text(file_path):
-    text_list = []
+def pdf_to_text(file_path, max_chunk_size=CHUNK_SIZE):
+    chunks = []
+    current_chunk = ""
+
     with fitz.open(file_path) as doc:
         for page in doc:
-            text_list.append(page.get_text())
-    return text_list
+            page_text = page.get_text()
+            # Check if adding the current page's text would exceed the max_chunk_size
+            if len(current_chunk) + len(page_text) > max_chunk_size:
+                # If it would, append the current chunk to the list and start a new one
+                chunks.append(current_chunk)
+                current_chunk = page_text
+            else:
+                # Otherwise, add the page's text to the current chunk
+                current_chunk += page_text
+
+    # Don't forget to add the last chunk if it's not empty
+    if current_chunk:
+        chunks.append(current_chunk)
+
+    return chunks
 
 def extractCsv(file_path):
     df_list = tabula.read_pdf(file_path, pages='all', multiple_tables=True)
