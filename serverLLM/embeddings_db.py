@@ -2,7 +2,7 @@ import os
 import uuid
 import PyPDF2 
 import openai
-from config import OPEN_AI_API_KEY, CHUNK_SIZE
+from config import OPEN_AI_API_KEY, TOKEN_COUNT
 from sklearn.metrics.pairwise import cosine_similarity
 import fitz
 import tabula
@@ -36,27 +36,26 @@ def get_embedding(chunk):
         raise
 
 
-def pdf_to_text(file_path, max_chunk_size=CHUNK_SIZE):
-    chunks = []
-    current_chunk = ""
+def pdf_to_text(file_path, max_token_count=TOKEN_COUNT):
+    text_chunks = []
+    current_chunk_tokens = []
 
     with fitz.open(file_path) as doc:
         for page in doc:
-            page_text = page.get_text()
-            # Check if adding the current page's text would exceed the max_chunk_size
-            if len(current_chunk) + len(page_text) > max_chunk_size:
-                # If it would, append the current chunk to the list and start a new one
-                chunks.append(current_chunk)
-                current_chunk = page_text
-            else:
-                # Otherwise, add the page's text to the current chunk
-                current_chunk += page_text
+            # Extract text from the page and split into tokens using space as delimiter
+            page_tokens = page.get_text().split()
+            for token in page_tokens:
+                current_chunk_tokens.append(token)
+                # If the current chunk reaches or exceeds the max_token_count, join and save it
+                if len(current_chunk_tokens) >= max_token_count:
+                    text_chunks.append(' '.join(current_chunk_tokens))
+                    current_chunk_tokens = []  # Reset for the next chunk
 
-    # Don't forget to add the last chunk if it's not empty
-    if current_chunk:
-        chunks.append(current_chunk)
+    # Add any remaining tokens as a final chunk
+    if current_chunk_tokens:
+        text_chunks.append(' '.join(current_chunk_tokens))
 
-    return chunks
+    return text_chunks
 
 def extractCsv(file_path):
     df_list = tabula.read_pdf(file_path, pages='all', multiple_tables=True)
