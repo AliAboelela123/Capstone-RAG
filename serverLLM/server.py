@@ -58,7 +58,7 @@ def query_endpoint():
             files = request.files.getlist('pdfFiles')
             for file in files:
                 print("Processing File:", file.filename)
-
+                #process the file
                 if file and allowed_file(file.filename):
                     filename = secure_filename(file.filename)
                     file_path = os.path.join(upload_directory, filename)

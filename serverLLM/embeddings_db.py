@@ -69,8 +69,10 @@ def extractCsv(file_path):
     return len(df_list)
 
 def csvs_to_string_and_delete(directory, num_files):
+    #Function to convert the CSV files into a string and then deletes the table.csv file to make room for the next file
     combined_csv_string = ""
     for i in range(num_files):
+        #create file path
         file_path = os.path.join(directory, f"table_{i}.csv")
         if os.path.exists(file_path):
             df = pd.read_csv(file_path)
@@ -81,7 +83,8 @@ def csvs_to_string_and_delete(directory, num_files):
             print(f"Deleted file: {file_path}")
         else:
             print(f"File not found: {file_path}")
-    print(combined_csv_string)
+    #print(combined_csv_string)
+    #returns string of csvs combined into one string
     return combined_csv_string
 
 
