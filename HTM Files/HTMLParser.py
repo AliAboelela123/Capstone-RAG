@@ -1,22 +1,27 @@
 import json
 import os
 from bs4 import BeautifulSoup
-from datetime import datetime
 
+def append_to_jsonl_file(data, jsonl_file_path):
+    """
+    Append data to a JSONL file. Creates the file if it does not exist.
 
-def process_html_file(file_path):
-    # Check if the file exists
+    :param data: Dictionary containing the data to append.
+    :param jsonl_file_path: Path to the JSONL file.
+    """
+    mode = 'a' if os.path.exists(jsonl_file_path) else 'w'
+    with open(jsonl_file_path, mode, encoding='utf-8') as jsonl_file:
+        jsonl_file.write(json.dumps(data) + '\n')
+
+def process_html_file(file_path, output_jsonl_file):
+    # Check if the HTML file exists
     if not os.path.exists(file_path):
-        return "File not found."
+        return "HTML File Not Found."
 
-    # Read the HTML file
     with open(file_path, 'r', encoding='utf-8') as file:
         html_content = file.read()
-
-    # Parse the HTML content
     soup = BeautifulSoup(html_content, 'html.parser')
 
-    # Extract text from paragraphs and headers
     paragraphs = [p.get_text(separator='\n', strip=True) for p in soup.find_all(['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'])]
 
     # Extract and format tables
@@ -35,18 +40,20 @@ def process_html_file(file_path):
     jsonl_content = {
         "messages": [
             {"role": "system", "content": "You are a financial AI that is trained on the top 30 companies in the S&P500, specially their 10Q forms."},
-            {"role": "user", "content": "For American Express, in 2023 Q3, what is its Quarterly Report?"},
+            {"role": "user", "content": "For Apple, in 2023 Q4, what is its Quarterly Report?"},
             {"role": "assistant", "content": combined_text}
         ]
     }
 
-    # Save to JSONL file
-    jsonl_file_name = f"output_{datetime.now().strftime('%Y%m%d_%H%M%S')}.jsonl"
-    with open(jsonl_file_name, 'w', encoding='utf-8') as jsonl_file:
-        json.dump(jsonl_content, jsonl_file)
+    # Append to JSONL file
+    append_to_jsonl_file(jsonl_content, output_jsonl_file)
 
-    return f"Processed content saved to {jsonl_file_name}"
+    return f"Content Appended to {output_jsonl_file}"
 
-# Example usage
+# Define the path to the HTML file and the JSONL file
 file_path = 'AMEX_HTML.html'
-print(process_html_file(file_path))
+output_jsonl_file = 'Apple.jsonl'
+
+# Process the HTML file and append to the JSONL file
+result = process_html_file(file_path, output_jsonl_file)
+print("Done")

@@ -24,7 +24,7 @@ headers = {
 
 
 def get_10q_links(cik):
-    base_url = f"https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK={cik}&type=10-Q&dateb=&owner=exclude&count=20"
+    base_url = f"https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK={cik}&type=10-Q&dateb=&owner=exclude&count=10"
     page = requests.get(base_url, headers=headers)
     print(page.status_code)
     if page.status_code != 200:
