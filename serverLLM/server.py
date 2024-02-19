@@ -70,6 +70,9 @@ def query_endpoint():
                     store_embeddings(file_path, csvString)
                     # Debug print
                     print("File Saved:", file_path)
+
+        if csvString:  # Assuming `csv_string` is the variable holding the CSV content
+            query += "\n\n" + "Here are the tables of the PDF in CSV format:\n" + csvString
         
         context = get_best_chunks(query)
         llm_response = get_response(query, complexity, context)
