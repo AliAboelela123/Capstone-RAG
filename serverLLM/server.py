@@ -9,7 +9,7 @@ from werkzeug.utils import secure_filename
 import os
 
 from LLMChain import get_response
-from embeddings_db import get_best_chunks, store_embeddings
+from embeddings_db import get_best_chunks, store_embeddings, extractCsv, csvs_to_string_and_delete
 from utilities import allowed_file
 
 
@@ -58,14 +58,16 @@ def query_endpoint():
             files = request.files.getlist('pdfFiles')
             for file in files:
                 print("Processing File:", file.filename)
-
+                #process the file
                 if file and allowed_file(file.filename):
                     filename = secure_filename(file.filename)
                     file_path = os.path.join(upload_directory, filename)
                     file.save(file_path)
                     pdf_files.append(file_path)
+                    numFiles = extractCsv(file_path)
+                    csvString = csvs_to_string_and_delete("./", numFiles)
                     # Assuming store_embeddings function returns context
-                    store_embeddings(file_path)
+                    store_embeddings(file_path, csvString)
                     # Debug print
                     print("File Saved:", file_path)
         
