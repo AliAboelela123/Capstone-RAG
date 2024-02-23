@@ -54,7 +54,6 @@ def pdf_to_text(file_path, max_token_count=TOKEN_COUNT):
     # Add any remaining tokens as a final chunk
     if current_chunk_tokens:
         text_chunks.append(' '.join(current_chunk_tokens))
-    #print(text_chunks)
 
     return text_chunks
 
