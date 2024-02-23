@@ -12,6 +12,8 @@ from LLMChain import get_response
 from embeddings_db import get_best_chunks, store_embeddings, extractCsv, csvs_to_string_and_delete
 from utilities import allowed_file
 
+#global variable for csv string
+combinedTables = ''
 
 # Flask app setup
 app = Flask(__name__)
@@ -52,7 +54,7 @@ def query_endpoint():
         context = None
 
         print("Files Received:", request.files)
-
+        csvString = ""
         # Check for PDF Files in the Request
         if 'pdfFiles' in request.files:
             files = request.files.getlist('pdfFiles')
@@ -70,7 +72,14 @@ def query_endpoint():
                     store_embeddings(file_path, csvString)
                     # Debug print
                     print("File Saved:", file_path)
+
+        global combinedTables 
+        combinedTables += csvString
         
+        print("Here is the combined table" + combinedTables)
+        if combinedTables:  # Assuming `csv_string` is the variable holding the CSV content
+            query += "\n\n" + "Here are the tables of the PDF in CSV format:\n" + combinedTables
+
         context = get_best_chunks(query)
         llm_response = get_response(query, complexity, context)
 
