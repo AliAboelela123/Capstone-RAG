@@ -47,7 +47,11 @@ def get_response(query, complexity, context=None):
 
     context_msg = ""
     if context:
-        context_msg = "The user has uploaded a document. A relevant excerpt from the document has been provided. It may assist you with the user's next question: <START_EXCERPT>" + context + " <END_EXCERPT>"
+        context_msg += "The user has uploaded a document. Relevant excerpt(s) from the document have been provided. It may assist you with the user's next question. When a document is uploaded please enclose references from the user uploaded documents like so: <<reference>>:\n<START_EXCERPT>\n"
+        for i, chunk in enumerate(context):
+            context_msg += f"<CHUNK {i}> {chunk} \n\n"
+        context_msg += "<END_OF_EXCERPTS>"
+
 
     result = conversation({
         "question": query,

@@ -5,7 +5,7 @@ Although outside the scope of our capstone project, afer graduating we hope to i
 
 # How to run the app (dev)
 1. Clone the repo
-2. Add a config.py file under FinancialDocumentAIAnalyzer/serverLLM. This file should define the open AI api key with: OPEN_AI_API_KEY = "Your-key-here"
+2. Add a config.py file under FinancialDocumentAIAnalyzer/serverLLM. This file should define the open AI api key with: OPEN_AI_API_KEY = "Your-key-here". You should also specify TOKEN_COUNT and NUM_CHUNKS. Make sure TOKEN_COUNT * NUM_CHUNKS is < 3000. Also, specify algorithm using ALGORITHM = 'G' or 'P' for greedy or probabilistic.
 3. Download docker desktop, and make sure docker is running
 4. Run the command "docker-compose up --build". This will build the containers, and run them.
 5. Alternatively you can build and run in separate steps with "docker-compose build" and "docker-compose up -d"
