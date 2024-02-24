@@ -41,7 +41,7 @@ const App = () => {
   };
 
   const uploadPDF = (file) => {
-    setUploadedPDFs([...uploadedPDFs, file]);
+    setUploadedPDFs(uploadedPDFs => [...uploadedPDFs, file]);
   };
 
   const clearPDF = (index) => {

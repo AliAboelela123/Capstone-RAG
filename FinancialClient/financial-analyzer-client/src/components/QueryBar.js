@@ -105,6 +105,7 @@ const QueryBar = ({ addMessage, appendMessage, uploadPDF, clearPDF, uploadedPDFs
     if (files.length > 0) {
       uploadPDF(files[0]);
     }
+    event.target.value = '';
   };
 
   const handleSendClick = async () => {

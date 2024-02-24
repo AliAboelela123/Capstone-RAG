@@ -41,9 +41,13 @@ const QueryBox = styled(Box)({
 });
 
 function formatTextWithLineBreaks(text) {
-  // Ensure text is a string to prevent 'undefined' errors
-  const safeText = text || ''; // If text is undefined, use an empty string instead
-  return safeText.replace(/\n/g, '<br />'); // Replace newlines with <br /> tags or any other formatting you need
+  text.replace(/\\n/g, '\n');
+  return text.split('\n').map((line, index, array) => (
+    <React.Fragment key={index}>
+      {line}
+      {index !== array.length - 1 && <br />}
+    </React.Fragment>
+  ));
 }
 
 const MainContent = ({ messages, addMessage }) => {
