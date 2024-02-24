@@ -24,6 +24,22 @@ const App = () => {
     });
   };
 
+  const appendMessage = (additionalText) => {
+    setMessages((prevMessages) => {
+      if (prevMessages.length === 0) {
+        return prevMessages;
+      }
+
+      const lastMessage = { ...prevMessages[prevMessages.length - 1] };
+
+      if (lastMessage.type === 'response') {
+        lastMessage.text += additionalText;
+      }
+
+      return [...prevMessages.slice(0, -1), lastMessage];
+    });
+  };
+
   const uploadPDF = (file) => {
     setUploadedPDFs([...uploadedPDFs, file]);
   };
@@ -43,6 +59,7 @@ const App = () => {
         </div>
         <QueryBar
           addMessage={addMessage}
+          appendMessage={appendMessage}
           uploadPDF={uploadPDF}
           clearPDF={clearPDF}
           uploadedPDFs={uploadedPDFs}

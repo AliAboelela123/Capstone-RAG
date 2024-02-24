@@ -41,22 +41,6 @@ def hello():
     """
     return jsonify({"message": "Hello world!"})
 
-
-@app.route('/stream-completion', methods=['POST'])
-def stream_completion():
-    data = request.json
-    query = data['query']
-    complexity = data.get('complexity', 'Expert')  # Assuming complexity can be part of the request
-
-    # The generator function for streaming should correctly format each message as a valid JSON object
-    # and ensure it's using `yield` within the streaming context
-    def generate_stream():
-        for response_part in get_response(query, complexity):
-            yield f"data: {json.dumps(response_part)}\n\n"
-
-    return Response(stream_with_context(generate_stream()), mimetype='text/event-stream')
-
-
 @app.route('/query', methods=['POST'])
 def query_endpoint():
     try:
@@ -74,13 +58,20 @@ def query_endpoint():
         print("After context")
 
         def generate_responses():
-            for response_part in get_response(query, complexity, context):
-                # Ensure each part of the response is a valid JSON object
-                print("Response in generate response")
-                print(response_part)
-                yield json.dumps({'data': response_part}) + '\n\n'
+            try:
+                for response_part in get_response(query, complexity):
+                    # Check if the response part is an error
+                    if isinstance(response_part, dict) and response_part.get('error'):
+                        yield f"data: {json.dumps({'data': response_part})}\n\n"
+                        break
+                    else:
+                        yield json.dumps({'data': response_part}) + '\n\n'
+            except Exception as e:
+                # If an exception occurs, yield an error message (this part won't execute due to how generators work with exceptions)
+                yield json.dumps({'error': str(e)}) + '\n\n'
 
         return Response(stream_with_context(generate_responses()), mimetype='application/json'), 200
+
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500

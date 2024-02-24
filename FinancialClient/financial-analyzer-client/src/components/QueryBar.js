@@ -69,7 +69,7 @@ const StyledFileName = styled(Typography)({
   whiteSpace: 'nowrap',
 });
 
-const QueryBar = ({ addMessage, uploadPDF, clearPDF, uploadedPDFs, setUploadedPDFs, selectedLevel }) => {
+const QueryBar = ({ addMessage, appendMessage, uploadPDF, clearPDF, uploadedPDFs, setUploadedPDFs, selectedLevel }) => {
   const [isLoading, setIsLoading] = useState(false);
   const textareaRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -112,9 +112,18 @@ const QueryBar = ({ addMessage, uploadPDF, clearPDF, uploadedPDFs, setUploadedPD
       alert('Please Enter a Query.');
       return;
     }
+
+
+    const queryMessage = {
+      type: 'query',
+      text: `${textareaRef.current.value}`,
+    };
+
+    addMessage(queryMessage);
   
     setIsLoading(true);
-  
+    let isFirstChunk = true;
+
     try {
       // FormData to hold Text Query and PDF Files
       const formData = new FormData();
@@ -136,42 +145,63 @@ const QueryBar = ({ addMessage, uploadPDF, clearPDF, uploadedPDFs, setUploadedPD
         body: formData,
         signal: signal,
       });
-  
+      
       if (response.ok) {
+
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
         let result = '';
   
-        reader.read().then(function processText({ done, value }) {
+        const read = async () => {
+          const { done, value } = await reader.read();
           if (done) {
             console.log("Stream Complete");
             setIsLoading(false);
             return;
           }
-          result += decoder.decode(value, {stream: true});
-          
-          // Assuming each chunk is a complete JSON object
+          result += decoder.decode(value, { stream: true });
+  
+          // Process each chunk
           try {
-            const json = JSON.parse(result);
-            // Handle JSON result here, e.g., updating state to render the response
-            console.log(json);
-            result = ''; // Reset result to capture next chunk
-          } catch(e) {
-            // If JSON.parse fails, it means we don't have a complete JSON object yet
+            // Here we check if we have a complete JSON chunk to process
+            if (result.endsWith('\n\n')) {
+              const jsons = result.trim().split('\n\n');
+              jsons.forEach(json => {
+                const parsed = JSON.parse(json);
+
+                // Check if either 'data' or 'error' has a valid value
+                if (parsed.data || parsed.error) {
+                  if (isFirstChunk || parsed.error) {
+                    // Use parsed.error if parsed.data is undefined, else use parsed.data
+                    const messageText = parsed.error || parsed.data;
+
+                    addMessage({ type: 'response', text: messageText });
+                    isFirstChunk = false; // After the first chunk, switch off the flag
+                  } else {
+                    appendMessage(parsed.data);
+                  }
+                }
+              });
+              result = ''; // Clear the buffer after processing
+            }
+          } catch (e) {
+            console.error(e); // Error handling for JSON parsing
           }
   
-          // Read the next chunk
-          reader.read().then(processText);
-        });
+          // Recursively read the next chunk
+          read();
+        };
+  
+        read(); // Start reading
       } else {
         throw new Error('Server Responded with an Error.');
       }
     } catch (error) {
       console.error(`Error: ${error.message}`);
     } finally {
-      // Clean up
       textareaRef.current.value = '';
       setUploadedPDFs([]);
+      setIsLoading(false); // Ensure loading is set to false even if an error occurs
     }
   };
 
