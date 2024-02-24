@@ -138,7 +138,6 @@ const QueryBar = ({ addMessage, appendMessage, uploadPDF, clearPDF, uploadedPDFs
         formData.append('pdfFiles', file, file.name);
       });
   
-      // Fetch request with signal for aborting if needed
       const controller = new AbortController();
       const signal = controller.signal;
       const response = await fetch('http://127.0.0.1:5001/query', {
@@ -156,44 +155,39 @@ const QueryBar = ({ addMessage, appendMessage, uploadPDF, clearPDF, uploadedPDFs
         const read = async () => {
           const { done, value } = await reader.read();
           if (done) {
-            console.log("Stream Complete");
             setIsLoading(false);
             return;
           }
           result += decoder.decode(value, { stream: true });
   
-          // Process each chunk
+          // Process Each Chunk
           try {
-            // Here we check if we have a complete JSON chunk to process
             if (result.endsWith('\n\n')) {
               const jsons = result.trim().split('\n\n');
               jsons.forEach(json => {
                 const parsed = JSON.parse(json);
 
-                // Check if either 'data' or 'error' has a valid value
                 if (parsed.data || parsed.error) {
                   if (isFirstChunk || parsed.error) {
-                    // Use parsed.error if parsed.data is undefined, else use parsed.data
                     const messageText = parsed.error || parsed.data;
 
                     addMessage({ type: 'response', text: messageText });
-                    isFirstChunk = false; // After the first chunk, switch off the flag
+                    isFirstChunk = false;
                   } else {
                     appendMessage(parsed.data);
                   }
                 }
               });
-              result = ''; // Clear the buffer after processing
+              result = '';
             }
           } catch (e) {
-            console.error(e); // Error handling for JSON parsing
+            console.error(e);
           }
   
-          // Recursively read the next chunk
           read();
         };
   
-        read(); // Start reading
+        read();
       } else {
         throw new Error('Server Responded with an Error.');
       }
@@ -202,7 +196,7 @@ const QueryBar = ({ addMessage, appendMessage, uploadPDF, clearPDF, uploadedPDFs
     } finally {
       textareaRef.current.value = '';
       setUploadedPDFs([]);
-      setIsLoading(false); // Ensure loading is set to false even if an error occurs
+      setIsLoading(false);
     }
   };
 
