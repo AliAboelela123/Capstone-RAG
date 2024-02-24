@@ -32,7 +32,7 @@ def get_embedding(chunk):
         # Extract embedding from the response
         embedding = response['data'][0]['embedding']
         return embedding
-    except openai.error.InvalidRequestError as e:
+    except openai.APIError as e:
         print("Invalid Request to OpenAI API:", e)
         raise
     except Exception as e:
@@ -177,29 +177,28 @@ def probabilistic_algorithm(similarities_dict, num_chunks):
 
 # TODO: Figure out how exactly we want to specify params like algorithm, chunks, chunk size, etc.
 def get_best_chunks(query, algorithm=ALGORITHM, num_chunks=NUM_CHUNKS):
-    # if not vector_index:
-    #     print("Empty vector index")
-    #     return None
-
     query_vector = get_embedding(query)
+    # Ensure query_vector is a 2D array before using it with cosine_similarity
+    data_array = np.array(query_vector)
+    query_vector = data_array.reshape(1, -1)  # Reshape for a single sample
+
     # Extract the list of vectors and UUIDs from the vector_index
     context_vectors = [embedding[1] for embedding in vector_index]
     uuids = [embedding[0] for embedding in vector_index]
 
     # Compute cosine similarities
-    similarities = cosine_similarity([query_vector], context_vectors)
+    similarities = cosine_similarity(query_vector, context_vectors)
 
     # Create a dictionary to associate UUIDs with cosine similarities
     similarities_dict = {uuid: similarity for uuid, similarity in zip(uuids, similarities[0])}
 
     try:
-        if (algorithm == 'G'):
+        if algorithm == 'G':
             print("Greedy algorithm")
             best_chunk_uuids = greedy_algorithm(similarities_dict, num_chunks)
-        elif (algorithm == 'P'):
+        elif algorithm == 'P':
             print("Probabilistic algorithm")
             best_chunk_uuids = probabilistic_algorithm(similarities_dict, num_chunks)
-    
     except ValueError as e:
         print(f"An Exception Occurred while getting best chunk: {e}")
         return "An Error Occurred While Processing the Documents."
