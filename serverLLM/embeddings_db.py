@@ -88,13 +88,18 @@ def csvs_to_string_and_delete(directory, num_files):
     for i in range(num_files):
         # Create File Path
         file_path = os.path.join(directory, f"table_{i}.csv")
+        print(file_path)
         if os.path.exists(file_path):
-            df = pd.read_csv(file_path)
-            combined_csv_string += df.to_csv(index=False, sep='\t') + "\n"
+            
+            try:
+                df = pd.read_csv(file_path)
+                combined_csv_string += df.to_csv(index=False, sep='\t') + "\n"
 
-            # Delete the CSV file
-            os.remove(file_path)
-            print(f"Deleted File: {file_path}")
+                # Delete the CSV file
+                os.remove(file_path)
+                print(f"Deleted File: {file_path}")
+            except Exception as e:
+                print(f"Error Deleting File {file_path}: {e}")
         else:
             print(f"File Not Found: {file_path}")
 
