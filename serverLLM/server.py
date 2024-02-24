@@ -59,7 +59,7 @@ def query_endpoint():
 
         def generate_responses():
             try:
-                for response_part in get_response(query, complexity):
+                for response_part in get_response(query, complexity, context):
                     # Check if the response part is an error
                     if isinstance(response_part, dict) and response_part.get('error'):
                         yield f"data: {json.dumps({'data': response_part})}\n\n"

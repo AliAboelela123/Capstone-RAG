@@ -82,7 +82,7 @@ def construct_prompt(system_msg, context_msg, question):
     """
     prompt_parts = [
         f"{system_msg}\n",
-        "\n".join(chat_history),  # Add existing chat history
+        "\n".join(chat_history),
         f"{context_msg}\n" if context_msg else "",
         f"{question}\n"
     ]
