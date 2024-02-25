@@ -114,10 +114,11 @@ const QueryBar = ({ addMessage, appendMessage, uploadPDF, clearPDF, uploadedPDFs
       return;
     }
 
-
     const queryMessage = {
       type: 'query',
       text: `${textareaRef.current.value}`,
+      files: uploadedPDFs.map(file => URL.createObjectURL(file)),
+      fileName: uploadedPDFs.map(file => file.name)
     };
 
     addMessage(queryMessage);
