@@ -69,7 +69,7 @@ const StyledFileName = styled(Typography)({
   whiteSpace: 'nowrap',
 });
 
-const QueryBar = ({ addMessage, uploadPDF, clearPDF, uploadedPDFs, setUploadedPDFs, selectedLevel }) => {
+const QueryBar = ({ addMessage, appendMessage, uploadPDF, clearPDF, uploadedPDFs, setUploadedPDFs, selectedLevel }) => {
   const [isLoading, setIsLoading] = useState(false);
   const textareaRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -105,6 +105,7 @@ const QueryBar = ({ addMessage, uploadPDF, clearPDF, uploadedPDFs, setUploadedPD
     if (files.length > 0) {
       uploadPDF(files[0]);
     }
+    event.target.value = '';
   };
 
   const handleSendClick = async () => {
@@ -112,59 +113,91 @@ const QueryBar = ({ addMessage, uploadPDF, clearPDF, uploadedPDFs, setUploadedPD
       alert('Please Enter a Query.');
       return;
     }
-    
+
+    const queryMessage = {
+      type: 'query',
+      text: `${textareaRef.current.value}`,
+      files: uploadedPDFs.map(file => URL.createObjectURL(file)),
+      fileName: uploadedPDFs.map(file => file.name)
+    };
+
+    addMessage(queryMessage);
+  
     setIsLoading(true);
+    let isFirstChunk = true;
 
     try {
       // FormData to hold Text Query and PDF Files
       const formData = new FormData();
-
-      // Append Text Query to formData
+  
+      // Append Text Query and complexity to formData
       formData.append('query', textareaRef.current.value.trim());
       formData.append('complexity', selectedLevel || 'Expert');
-
-      // Check if there are any PDF files uploaded
-      const hasPDFs = uploadedPDFs.length > 0;
-    
-      // Append each PDF File to formData only if there are PDF files
-      if (hasPDFs) {
-        uploadedPDFs.forEach((file) => {
-          formData.append('pdfFiles', file, file.name);
-        });
-      }
-
+  
+      // Append PDF Files to formData
+      uploadedPDFs.forEach((file) => {
+        formData.append('pdfFiles', file, file.name);
+      });
+  
+      const controller = new AbortController();
+      const signal = controller.signal;
       const response = await fetch('http://127.0.0.1:5001/query', {
         method: 'POST',
         body: formData,
+        signal: signal,
       });
-
+      
       if (response.ok) {
-        const data = await response.json();
-        if (data.error) {
-          throw new Error(data.error);
-        }
-        
-        const queryMessage = {
-          type: 'query',
-          text: `${textareaRef.current.value}${hasPDFs ? `\n${uploadedPDFs.map(file => file.name).join(', ')}` : ''}`,
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let result = '';
+  
+        const read = async () => {
+          const { done, value } = await reader.read();
+          if (done) {
+            setIsLoading(false);
+            return;
+          }
+          result += decoder.decode(value, { stream: true });
+  
+          // Process Each Chunk
+          try {
+            if (result.endsWith('\n\n')) {
+              const jsons = result.trim().split('\n\n');
+              jsons.forEach(json => {
+                const parsed = JSON.parse(json);
+
+                if (parsed.data || parsed.error) {
+                  if (isFirstChunk || parsed.error) {
+                    const messageText = parsed.error || parsed.data;
+
+                    addMessage({ type: 'response', text: messageText });
+                    isFirstChunk = false;
+                  } else {
+                    appendMessage(parsed.data);
+                  }
+                }
+              });
+              result = '';
+            }
+          } catch (e) {
+            console.error(e);
+          }
+  
+          read();
         };
-        const responseMessage = {
-          type: 'response',
-          text: data.response,
-        };
-        
-        addMessage(queryMessage);
-        addMessage(responseMessage);
+  
+        read();
       } else {
         throw new Error('Server Responded with an Error.');
       }
     } catch (error) {
-      addMessage({ type: 'query', text: `Error Sending Message: ${textareaRef.current.value}` });
-      addMessage({ type: 'response', text: `Error: ${error.message}` });
+      console.error(`Error: ${error.message}`);
     } finally {
-      setIsLoading(false);
       textareaRef.current.value = '';
       setUploadedPDFs([]);
+      setIsLoading(false);
     }
   };
 

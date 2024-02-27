@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Box, styled, GlobalStyles } from '@mui/material';
+import { Box, Button, styled, GlobalStyles } from '@mui/material';
+import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 
 const MainContentBox = styled(Box)(({ paddingBottom }) => ({
   display: 'flex',
@@ -19,6 +20,25 @@ const MessageBox = styled(Box)(({ theme }) => ({
   maxWidth: '70%',
   borderRadius: '10px',
 }));
+
+const StyledButton = styled(Button)({
+  padding: '0.5rem 1rem',
+  backgroundColor: '#DDDDDD',
+  borderRadius: '50px',
+  alignSelf: 'flex-end',
+  color: 'black',
+  fontFamily: 'Poppins, sans-serif',
+  fontWeight: 400,
+  maxWidth: '60%',
+  marginTop: '-10px',
+  marginBottom: '20px',
+  '&:hover': {
+    backgroundColor: '#BBBBBB',
+  },
+  '&:active': {
+    backgroundColor: '#BBBBBB',
+  },
+});
 
 const ResponseBox = styled(Box)({
   alignSelf: 'flex-start',
@@ -50,9 +70,10 @@ function formatTextWithLineBreaks(text) {
   ));
 }
 
-const MainContent = ({ messages, addMessage }) => {
+const MainContent = ({ messages, onOpenPdf }) => {
   const [queryBarHeight, setQueryBarHeight] = useState(0);
   const queryBarRef = useRef(null); 
+  const endOfMessagesRef = useRef(null);
 
   useEffect(() => {
     const updateQueryBarHeight = () => {
@@ -65,6 +86,18 @@ const MainContent = ({ messages, addMessage }) => {
     return () => window.removeEventListener('resize', updateQueryBarHeight);
   }, [messages]);
 
+  const scrollToBottom = () => {
+    endOfMessagesRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  const handleOpenPdf = (pdfFile) => {
+    onOpenPdf(pdfFile);
+  };
+
   return (
     <MainContentBox paddingBottom={`${queryBarHeight}px`}>
       <GlobalStyles styles={{
@@ -76,14 +109,37 @@ const MainContent = ({ messages, addMessage }) => {
         },
       }} />
       {messages.map((message, index) => (
-        <MessageBox 
-          key={index}
-          component={message.type === 'response' ? ResponseBox : QueryBox}
-        >
-          <div>{formatTextWithLineBreaks(message.text)}</div>
-        </MessageBox>
+        <React.Fragment key={index}>
+          {message.type === 'response' && (
+            <MessageBox 
+              key={index}
+              component={ResponseBox}
+            >
+              <div>{formatTextWithLineBreaks(message.text)}</div>
+            </MessageBox>
+          )}
+          {message.type === 'query' && message.files && (
+            <MessageBox 
+              component={QueryBox}
+            >
+              <div>{formatTextWithLineBreaks(message.text)}</div>
+            </MessageBox>
+          )}
+          {message.files && message.files.map((fileName, fileIndex) => (
+            
+              <StyledButton startIcon={<PictureAsPdfIcon />} 
+                onClick={() => handleOpenPdf(fileName)}
+              >
+                {message.fileName}
+              </StyledButton>
+          ))}
+        </React.Fragment>
       ))}
+      <div ref={endOfMessagesRef} />
+      
     </MainContentBox>
+    
+    
   );
 };
 
