@@ -14,6 +14,7 @@ const StyledHeader = styled(Box)(({ theme }) => ({
   display: 'flex',
   justifyContent: 'space-between',
   alignItems: 'center',
+  zIndex: 1,
 }));
 
 const Header = ({ selectedLevel, setSelectedLevel }) => {
