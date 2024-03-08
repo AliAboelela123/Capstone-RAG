@@ -12,16 +12,16 @@ import openai
 
 # Local Application/Library Specific Imports
 from config import OPEN_AI_API_KEY, TOKEN_COUNT, ALGORITHM, NUM_CHUNKS
+from chunk import Chunk
+from utilities import pdf_to_text
 
 # Setting OpenAI API Key from Environment Variable
 os.environ["OPENAI_API_KEY"] = OPEN_AI_API_KEY
 
-# Stores Embeddings in Vector Format: A List of Pairs (Embedding_ID, [Embedding])
-vector_index = []
-
 # Stores Texts: A Dictionary with Embedding_ID as Key and Text as Value
-text_index = {}
-
+text_db = {}
+# Stores tables
+tables_db = {}
 
 def get_embedding(chunk):
     # Ensures the Chunk Is a String and Not Empty
@@ -45,46 +45,10 @@ def get_embedding(chunk):
         raise
 
 
-def pdf_to_text(file_path, max_token_count=TOKEN_COUNT):
-    # Extracts Text from PDF and Splits It into Manageable Chunks.
-    text_chunks = []
-    current_chunk_tokens = []
+def store_tables(directory, num_files, source):
+    print("Entered store table function")
 
-    with fitz.open(file_path) as doc:
-        for page in doc:
-            # Extract Text from the Page and Split into Tokens using Space as Delimiter
-            page_tokens = page.get_text().split()
-            for token in page_tokens:
-                current_chunk_tokens.append(token)
-                # If the Current Chunk Reaches or Exceeds the max_token_count, Join and Save It
-                if len(current_chunk_tokens) >= max_token_count:
-                    text_chunks.append(' '.join(current_chunk_tokens))
-                    current_chunk_tokens = []  # Reset for Next Chunk
-
-    if current_chunk_tokens:
-        text_chunks.append(' '.join(current_chunk_tokens))
-
-    return text_chunks
-
-
-def extractCsv(file_path):
-    # Extracts Tables from PDF as CSV
-    df_list = tabula.read_pdf(file_path, pages='all', multiple_tables=True)
-    
-    # Convert to CSV 
-    for i, df in enumerate(df_list):
-        # Save to Currect Directory
-        df.to_csv(f'./table_{i}.csv', index=False)
-
-    print("Number of File is: ", len(df_list))
-    # Return Number of Tables
-    return len(df_list)
-
-
-def csvs_to_string_and_delete(directory, num_files):
-    # Converts CSV Files to a Single String and Deletes Them
-    combined_csv_string = ""
-
+    # Converts CSV Files to chunks then Deletes Them
     for i in range(num_files):
         # Create File Path
         file_path = os.path.join(directory, f"table_{i}.csv")
@@ -92,9 +56,13 @@ def csvs_to_string_and_delete(directory, num_files):
         if os.path.exists(file_path):
             
             try:
+                # Open the file
                 df = pd.read_csv(file_path)
-                combined_csv_string += df.to_csv(index=False, sep='\t') + "\n"
-
+                # Create & insert the chunk
+                csv_string = df.to_csv(index=False, sep='\t') + "\n"
+                table_embedding = get_embedding(csv_string)
+                uuid = str(uuid.uuid4())
+                tables_db[uuid] = Chunk(uuid, csv_string, table_embedding, source)
                 # Delete the CSV file
                 os.remove(file_path)
                 print(f"Deleted File: {file_path}")
@@ -102,12 +70,13 @@ def csvs_to_string_and_delete(directory, num_files):
                 print(f"Error Deleting File {file_path}: {e}")
         else:
             print(f"File Not Found: {file_path}")
+    
+    print("Exited store table function")
+    return True
 
-    # Returns String of CSVs Combined into One String
-    return combined_csv_string
 
-
-def store_embeddings(file_path, extracted_tables=None):
+def store_text(file_path, source):
+    print("Entered store text function")
     # Converts CSV Files to a Single String and Deletes Them
     if file_path is None:
         return False
@@ -115,27 +84,22 @@ def store_embeddings(file_path, extracted_tables=None):
     # Load the PDF and Split it into Pages
     string_chunks = pdf_to_text(file_path)
 
-    # Add the Additional CSV Text to the string_chunks with a Contextual Message
-    if extracted_tables:
-        csv_intro_message = "Here are the tables of the PDF in CSV format:\n"
-        combined_csv_text = csv_intro_message + extracted_tables
-        string_chunks.append(combined_csv_text)
-
     # Get Embedding Model
     for chunk in string_chunks:
         if not chunk.strip():
             print("Skipping Empty Chunk")
             continue
         try:
-            random_uuid = str(uuid.uuid4())
-            text_index[random_uuid] = chunk
+            uuid = str(uuid.uuid4())
+            
             chunk_embedding = get_embedding(chunk)
-            vector_index.append((random_uuid, chunk_embedding))
+            text_db[uuid] = Chunk(uuid, chunk, chunk_embedding, source)
         except ValueError as e:
             print(f"Skipping Chunk Due to Error: {e}")
         except Exception as e:
             print(f"An Exception Occurred While Processing Chunk: {e}")
 
+    print("Exit store text function")
     return True
 
 
@@ -166,9 +130,7 @@ def probabilistic_algorithm(similarities_dict, num_chunks):
     # Convert Cosine Similarities to Probabilities Using Softmax
     similarities_values = list(similarities_dict.values())
     probabilities = softmax(similarities_values)
-    summm = 0
-    for i in probabilities:
-        summm += i
+
     selected_chunks = []
 
     for _ in range(num_chunks):
@@ -202,22 +164,32 @@ def get_best_chunks(query, algorithm=ALGORITHM, num_chunks=NUM_CHUNKS):
     query_vector = data_array.reshape(1, -1)
 
     # Extract the List of Vectors and UUIDs from the vector_index
-    context_vectors = [embedding[1] for embedding in vector_index]
-    uuids = [embedding[0] for embedding in vector_index]
+    text_embeddings = [Chunk.embedding for _, Chunk in text_db]
+    text_uuids = [uuid for uuid, _ in text_db]
+
+    table_embeddings = [Chunk.embedding for _, Chunk in tables_db]
+    table_uuids = [uuid for uuid, _ in tables_db]
 
     # Compute Cosine Similarities
-    similarities = cosine_similarity(query_vector, context_vectors)
+    text_similarities = cosine_similarity(query_vector, text_embeddings)
+    table_similarities = cosine_similarity(query_vector, table_embeddings)
 
     # Create a Dictionary to Associate UUIDs with Cosine Similarities
-    similarities_dict = {uuid: similarity for uuid, similarity in zip(uuids, similarities[0])}
+    text_similarities_dict = {uuid: similarity for uuid, similarity in zip(text_uuids, text_similarities[0])}
+    table_similarities_dict = {uuid: similarity for uuid, similarity in zip(table_uuids, table_similarities[0])}
+    
+    best_text_uuids = []
+    best_table_uuids = []
 
     try:
         if algorithm == 'G':
-            best_chunk_uuids = greedy_algorithm(similarities_dict, num_chunks)
+            best_text_uuids = greedy_algorithm(text_similarities_dict, num_chunks)
+            best_table_uuids = greedy_algorithm(table_similarities_dict, num_chunks)
         elif algorithm == 'P':
-            best_chunk_uuids = probabilistic_algorithm(similarities_dict, num_chunks)
+            best_text_uuids = probabilistic_algorithm(text_similarities_dict, num_chunks)
+            best_table_uuids = probabilistic_algorithm(table_similarities_dict, num_chunks)
     except ValueError as e:
         print(f"An Exception Occurred While Getting Best Chunk: {e}")
         return "An Error Occurred While Processing the Documents. Please Try Again."
 
-    return [text_index[i] for i in best_chunk_uuids]
+    return [text_db[uuid] for uuid in best_text_uuids], [tables_db[uuid] for uuid in best_table_uuids]

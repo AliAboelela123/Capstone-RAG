@@ -38,14 +38,18 @@ def construct_prompt(system_msg, context_msg, question):
     ]
     return "\n".join(prompt_parts)
 
-def get_response(query, complexity, context=None):
+def get_response(query, complexity, text_chunks=None, table_chunks=None):
     system_msg = f"You are a friendly chatbot having a conversation with a human. You are an expert in finance and specifically trained on 10K data from Top 50 companies in 2022 and 2023. The user you are speaking with has a {complexity} understanding of finance."
     
     context_msg = ""
-    if context:
+    if text_chunks:
         context_msg = "The user has uploaded a PDF document which has been parsed where relevant excerpt(s) from the document have been provided. It may assist you with the user's next question. When a document is uploaded please enclose references from the user uploaded documents like so: <<reference>>:\n<START_EXCERPT>\n" + "\n\n".join(
-            [f"<CHUNK {i}> {chunk}" for i, chunk in enumerate(context)]) + "\n<END_OF_EXCERPTS>"
+            [f"<CHUNK {i}> {text_chunk.text}" for i, text_chunk in enumerate(text_chunks)]) + "\n<END_OF_EXCERPTS>"
     
+    if tables:
+        context_msg += "\n The following table(s) extracted from the document may be relevant to the query".join(
+            [f"<Table {i}> {table_chunk.text}" for i, table_chunk in enumerate(table_chunks)]) + "\n<END_OF_EXCERPTS>"
+
     prompt = construct_prompt(system_msg, context_msg, query)
     
     try:

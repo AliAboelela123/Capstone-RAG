@@ -6,8 +6,8 @@ import os
 import json
 
 from LLMChain import get_response
-from embeddings_db import get_best_chunks, store_embeddings, extractCsv, csvs_to_string_and_delete
-from utilities import allowed_file
+from embeddings_db import get_best_chunks, store_text, store_tables
+from utilities import allowed_file, extractCsv
 
 
 #global variable for csv string
@@ -50,7 +50,6 @@ def query_endpoint():
 
         complexity = request.form.get('complexity', 'Expert')
         pdf_files = []
-        context = None
 
         print("Files Received:", request.files)
         csvString = ""
@@ -66,26 +65,17 @@ def query_endpoint():
                     file.save(file_path)
                     pdf_files.append(file_path)
                     numFiles = extractCsv(file_path)
-                    csvString = csvs_to_string_and_delete("./", numFiles)
-                    # Assuming store_embeddings function returns context
-                    store_embeddings(file_path, csvString)
+                    store_tables("./", numFiles, filename)
+                    store_text(file_path, filename)
                     # Debug print
                     print("File Saved:", file_path)
 
-        global combinedTables 
-        combinedTables += csvString
-        
-        print("Here is the combined table" + combinedTables)
-        if combinedTables:  # Assuming `csv_string` is the variable holding the CSV content
-            query += "\n\n" + "Here are the tables of the PDF in CSV format:\n" + combinedTables
-
-
-        context = get_best_chunks(query)
+        best_text_chunks, best_table_chunks = get_best_chunks(query)
 
         def generate_responses():
             """Stream Responses to the Client."""
             try:
-                for response_part in get_response(query, complexity, context):
+                for response_part in get_response(query, complexity, best_text_chunks, best_table_chunks):
                     # Check if the Response Part Is an Error
                     if isinstance(response_part, dict) and response_part.get('error'):
                         yield f"data: {json.dumps({'data': response_part})}\n\n"
@@ -96,27 +86,11 @@ def query_endpoint():
                 # Yield an Error Message if an Exception Occurs
                 yield json.dumps({'error': str(e)}) + '\n\n'
 
+        # references = find_references(best_text_chunks, response)
         return Response(stream_with_context(generate_responses()), mimetype='application/json'), 200
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-
-
-# Process PDF Files
-def process_pdf_files(pdf_files):
-    """Process PDF Files, Store Embeddings, and Extract Contexts."""
-    processed_files = []
-    for file in pdf_files:
-        if file and allowed_file(file.filename):
-            filename = secure_filename(file.filename)
-            file_path = os.path.join(upload_directory, filename)
-            file.save(file_path)
-            processed_files.append(file_path)
-            numFiles = extractCsv(file_path)
-            csvString = csvs_to_string_and_delete("./", numFiles)
-            store_embeddings(file_path, csvString)
-    return processed_files
-
 
 # Start the Server
 def start_server():
