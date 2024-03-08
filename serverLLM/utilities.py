@@ -1,4 +1,5 @@
 import re
+import tabula, fitz
 
 from config import TOKEN_COUNT
 
@@ -20,16 +21,14 @@ def pdf_to_text(file_path, max_token_count=TOKEN_COUNT):
                 if len(current_chunk_tokens) >= max_token_count:
                     text_chunks.append(' '.join(current_chunk_tokens))
                     current_chunk_tokens = []  # Reset for Next Chunk
-
     if current_chunk_tokens:
         text_chunks.append(' '.join(current_chunk_tokens))
-
-    doc.close()
-
+    print("Exit pdf to text")
     return text_chunks
 
 
 def extractCsv(file_path):
+    print("Entering extract csv")
     # Extracts Tables from PDF as CSV
     df_list = tabula.read_pdf(file_path, pages='all', multiple_tables=True)
     # Convert to CSV 

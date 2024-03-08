@@ -52,7 +52,6 @@ def query_endpoint():
         pdf_files = []
 
         print("Files Received:", request.files)
-        csvString = ""
         # Check for PDF Files in the Request
         if 'pdfFiles' in request.files:
             files = request.files.getlist('pdfFiles')

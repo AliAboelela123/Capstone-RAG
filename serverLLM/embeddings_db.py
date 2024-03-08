@@ -5,8 +5,6 @@ import uuid
 # Related Third Party Imports
 import numpy as np
 import pandas as pd
-import fitz  # PyMuPDF
-import tabula
 from sklearn.metrics.pairwise import cosine_similarity
 import openai
 
@@ -61,8 +59,8 @@ def store_tables(directory, num_files, source):
                 # Create & insert the chunk
                 csv_string = df.to_csv(index=False, sep='\t') + "\n"
                 table_embedding = get_embedding(csv_string)
-                uuid = str(uuid.uuid4())
-                tables_db[uuid] = Chunk(uuid, csv_string, table_embedding, source)
+                uuid_value = str(uuid.uuid4())
+                tables_db[uuid_value] = Chunk(uuid_value, csv_string, table_embedding, source)
                 # Delete the CSV file
                 os.remove(file_path)
                 print(f"Deleted File: {file_path}")
@@ -81,6 +79,7 @@ def store_text(file_path, source):
     if file_path is None:
         return False
 
+    print("Entered pdf to text")
     # Load the PDF and Split it into Pages
     string_chunks = pdf_to_text(file_path)
 
@@ -90,10 +89,9 @@ def store_text(file_path, source):
             print("Skipping Empty Chunk")
             continue
         try:
-            uuid = str(uuid.uuid4())
-            
+            uuid_value = str(uuid.uuid4())
             chunk_embedding = get_embedding(chunk)
-            text_db[uuid] = Chunk(uuid, chunk, chunk_embedding, source)
+            text_db[uuid_value] = Chunk(uuid_value, chunk, chunk_embedding, source)
         except ValueError as e:
             print(f"Skipping Chunk Due to Error: {e}")
         except Exception as e:
@@ -155,8 +153,7 @@ def probabilistic_algorithm(similarities_dict, num_chunks):
 # TODO: Specify Params like Algorithm, Chunks, Chunk Size
 
 def get_best_chunks(query, algorithm=ALGORITHM, num_chunks=NUM_CHUNKS):
-    # Selects Chunks Based on Probabilities Derived from Cosine Similarities
-
+    # Selects Chunks based on Cosine Similarities
     query_vector = get_embedding(query)
 
     # Ensure query_vector is a 2D Array Before cosine_similarity
@@ -164,11 +161,11 @@ def get_best_chunks(query, algorithm=ALGORITHM, num_chunks=NUM_CHUNKS):
     query_vector = data_array.reshape(1, -1)
 
     # Extract the List of Vectors and UUIDs from the vector_index
-    text_embeddings = [Chunk.embedding for _, Chunk in text_db]
-    text_uuids = [uuid for uuid, _ in text_db]
+    text_embeddings = [Chunk.embedding for _, Chunk in text_db.items()]
+    text_uuids = [text_uuid for text_uuid, _ in text_db.items()]
 
-    table_embeddings = [Chunk.embedding for _, Chunk in tables_db]
-    table_uuids = [uuid for uuid, _ in tables_db]
+    table_embeddings = [Chunk.embedding for _, Chunk in tables_db.items()]
+    table_uuids = [table_uuid for table_uuid, _ in tables_db.items()]
 
     # Compute Cosine Similarities
     text_similarities = cosine_similarity(query_vector, text_embeddings)
@@ -177,7 +174,7 @@ def get_best_chunks(query, algorithm=ALGORITHM, num_chunks=NUM_CHUNKS):
     # Create a Dictionary to Associate UUIDs with Cosine Similarities
     text_similarities_dict = {uuid: similarity for uuid, similarity in zip(text_uuids, text_similarities[0])}
     table_similarities_dict = {uuid: similarity for uuid, similarity in zip(table_uuids, table_similarities[0])}
-    
+
     best_text_uuids = []
     best_table_uuids = []
 
