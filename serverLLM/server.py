@@ -7,14 +7,18 @@ import json
 
 from LLMChain import get_response
 from embeddings_db import get_best_chunks, store_text, store_tables
-from utilities import allowed_file, extractCsv
+from utilities import allowed_file, extractCsv, find_references
 
 
 #global variable for csv string
 combinedTables = ''
 
-# Flask app setup
+# global variables holding most recent context & response of the LLM, used to compute references
+final_response = ""
+best_text_chunks = []
+best_table_chunks = []
 
+# Flask app setup
 app = Flask(__name__)
 app.secret_key = 'A0Zr98j/3yX R~XHH!jmN]LWX/,?RT'
 
@@ -30,18 +34,16 @@ upload_directory = os.path.join(current_directory, 'uploads')
 if not os.path.exists(upload_directory):
     os.makedirs(upload_directory)
 
-
-# Validate Uploaded Files
-def allowed_file(filename):
-    """Check If File Extension Is Allowed."""
-    return '.' in filename and \
-           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
-
 # Endpoint for Processing Queries
 @app.route('/query', methods=['POST'])
 def query_endpoint():
     """Handle Query Requests and Provide LLM Responses."""
+    global final_response
+    global best_text_chunks
+    global best_table_chunks
+
+    final_response = ""
+
     try:
         query = request.form.get('query')
         complexity = request.form.get('complexity', 'Expert')
@@ -73,6 +75,7 @@ def query_endpoint():
 
         def generate_responses():
             """Stream Responses to the Client."""
+            global final_response
             try:
                 for response_part in get_response(query, complexity, best_text_chunks, best_table_chunks):
                     # Check if the Response Part Is an Error
@@ -80,16 +83,28 @@ def query_endpoint():
                         yield f"data: {json.dumps({'data': response_part})}\n\n"
                         break
                     else:
+                        final_response += response_part
                         yield json.dumps({'data': response_part}) + '\n\n'
             except Exception as e:
                 # Yield an Error Message if an Exception Occurs
                 yield json.dumps({'error': str(e)}) + '\n\n'
 
-        # references = find_references(best_text_chunks, response)
         return Response(stream_with_context(generate_responses()), mimetype='application/json'), 200
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+@app.route('/references', methods=['GET'])
+def query_references():
+    print("in ref endpoint")
+
+    references = find_references(best_text_chunks, final_response)
+
+    if not references:
+        return jsonify({'error': "No references available"})
+
+    print(references)
+    return jsonify({'references': references})
 
 # Start the Server
 def start_server():

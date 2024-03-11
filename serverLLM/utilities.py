@@ -51,7 +51,7 @@ def find_references(text_chunks, response):
     for num in non_year_numbers:
         for chunk in text_chunks:
             if num in chunk.text:
-                reference = (chunk.find_reference(num), chunk.source)
+                reference = (num, chunk.find_reference(num), chunk.source)
                 references += [reference]
     
     return references

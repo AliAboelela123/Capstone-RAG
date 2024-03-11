@@ -14,7 +14,7 @@ class Chunk:
         self.embedding = embedding
         self.source = source
 
-    def find_reference(number):
+    def find_reference(self, number):
         """
         Scans the chunk for the input number. If a match is found returns
         the surrounding sentence

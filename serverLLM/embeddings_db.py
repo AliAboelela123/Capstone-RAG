@@ -153,6 +153,7 @@ def probabilistic_algorithm(similarities_dict, num_chunks):
 # TODO: Specify Params like Algorithm, Chunks, Chunk Size
 
 def get_best_chunks(query, algorithm=ALGORITHM, num_chunks=NUM_CHUNKS):
+    print("Calculating best chunks")
     # Selects Chunks based on Cosine Similarities
     query_vector = get_embedding(query)
 
@@ -189,4 +190,5 @@ def get_best_chunks(query, algorithm=ALGORITHM, num_chunks=NUM_CHUNKS):
         print(f"An Exception Occurred While Getting Best Chunk: {e}")
         return "An Error Occurred While Processing the Documents. Please Try Again."
 
+    print("Done finding best chunks")
     return [text_db[uuid] for uuid in best_text_uuids], [tables_db[uuid] for uuid in best_table_uuids]
