@@ -23,12 +23,12 @@ def pdf_to_text(file_path, max_token_count=TOKEN_COUNT):
                     current_chunk_tokens = []  # Reset for Next Chunk
     if current_chunk_tokens:
         text_chunks.append(' '.join(current_chunk_tokens))
-    print("Exit pdf to text")
+    print("Exit PDF to Text")
     return text_chunks
 
 
 def extractCsv(file_path):
-    print("Entering extract csv")
+    print("Entering Extract CSV")
     # Extracts Tables from PDF as CSV
     df_list = tabula.read_pdf(file_path, pages='all', multiple_tables=True)
     # Convert to CSV 
@@ -41,9 +41,9 @@ def extractCsv(file_path):
     return len(df_list)
 
 def find_references(text_chunks, response):
-    # Regular expression to find all numbers
+    # Regular Expression to Find All Numbers
     numbers = re.findall(r'\b\d+\b', response)
-    # Filter out years
+    # Filter Out Years
     non_year_numbers = [num for num in numbers if not (num.startswith('19') or num.startswith('20')) or len(num) != 4]
 
     references = []
@@ -53,5 +53,6 @@ def find_references(text_chunks, response):
             if num in chunk.text:
                 reference = (num, chunk.find_reference(num), chunk.source)
                 references += [reference]
-    
+    print("References")
+    print(references)
     return references

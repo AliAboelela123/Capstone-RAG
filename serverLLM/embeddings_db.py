@@ -44,9 +44,9 @@ def get_embedding(chunk):
 
 
 def store_tables(directory, num_files, source):
-    print("Entered store table function")
+    print("Entered Store Table Function")
 
-    # Converts CSV Files to chunks then Deletes Them
+    # Converts CSV Files to Chunks then Deletes Them
     for i in range(num_files):
         # Create File Path
         file_path = os.path.join(directory, f"table_{i}.csv")
@@ -54,9 +54,9 @@ def store_tables(directory, num_files, source):
         if os.path.exists(file_path):
             
             try:
-                # Open the file
+                # Open the File
                 df = pd.read_csv(file_path)
-                # Create & insert the chunk
+                # Create & Insert the Chunk
                 csv_string = df.to_csv(index=False, sep='\t') + "\n"
                 table_embedding = get_embedding(csv_string)
                 uuid_value = str(uuid.uuid4())
@@ -69,17 +69,17 @@ def store_tables(directory, num_files, source):
         else:
             print(f"File Not Found: {file_path}")
     
-    print("Exited store table function")
+    print("Exited Store Table Function")
     return True
 
 
 def store_text(file_path, source):
-    print("Entered store text function")
+    print("Entered Store Text Function")
     # Converts CSV Files to a Single String and Deletes Them
     if file_path is None:
         return False
 
-    print("Entered pdf to text")
+    print("Entered PDF to Text")
     # Load the PDF and Split it into Pages
     string_chunks = pdf_to_text(file_path)
 
@@ -97,7 +97,7 @@ def store_text(file_path, source):
         except Exception as e:
             print(f"An Exception Occurred While Processing Chunk: {e}")
 
-    print("Exit store text function")
+    print("Exit Store Text Function")
     return True
 
 
@@ -153,7 +153,7 @@ def probabilistic_algorithm(similarities_dict, num_chunks):
 # TODO: Specify Params like Algorithm, Chunks, Chunk Size
 
 def get_best_chunks(query, algorithm=ALGORITHM, num_chunks=NUM_CHUNKS):
-    print("Calculating best chunks")
+    print("Calculating Best Chunks")
     # Selects Chunks based on Cosine Similarities
     query_vector = get_embedding(query)
 
@@ -190,5 +190,5 @@ def get_best_chunks(query, algorithm=ALGORITHM, num_chunks=NUM_CHUNKS):
         print(f"An Exception Occurred While Getting Best Chunk: {e}")
         return "An Error Occurred While Processing the Documents. Please Try Again."
 
-    print("Done finding best chunks")
+    print("Done Finding Best Chunks")
     return [text_db[uuid] for uuid in best_text_uuids], [tables_db[uuid] for uuid in best_table_uuids]

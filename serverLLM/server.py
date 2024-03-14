@@ -96,12 +96,12 @@ def query_endpoint():
 
 @app.route('/references', methods=['GET'])
 def query_references():
-    print("in ref endpoint")
+    print("In References Endpoint")
 
     references = find_references(best_text_chunks, final_response)
 
     if not references:
-        return jsonify({'error': "No references available"})
+        return jsonify({'error': "No References Available"})
 
     print(references)
     return jsonify({'references': references})
