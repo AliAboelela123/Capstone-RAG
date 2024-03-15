@@ -106,6 +106,16 @@ def query_references():
     print(references)
     return jsonify({'references': references})
 
+@app.route('/extractedTable', methods=['GET'])
+def sendTable():
+    print("In extracted Endpoint")
+
+    if not best_table_chunks[0].text:
+        return jsonify({'error': "No tables Available"})
+    
+    print(best_table_chunks[0].text)
+    return jsonify({'extractedTable': best_table_chunks[0].text})
+
 # Start the Server
 def start_server():
     """Start the Flask Server with Waitress as the Production Server."""
