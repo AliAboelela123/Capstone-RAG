@@ -6,10 +6,19 @@ import os
 import json
 
 from LLMChain import get_response
-from embeddings_db import get_best_chunks, store_embeddings, extractCsv, csvs_to_string_and_delete
-from utilities import allowed_file
+from embeddings_db import get_best_chunks, store_text, store_tables
+from utilities import allowed_file, extractCsv, find_references
 
-# Flask App Setup
+
+#global variable for csv string
+combinedTables = ''
+
+# global variables holding most recent context & response of the LLM, used to compute references
+final_response = ""
+best_text_chunks = []
+best_table_chunks = []
+
+# Flask app setup
 app = Flask(__name__)
 app.secret_key = 'A0Zr98j/3yX R~XHH!jmN]LWX/,?RT'
 
@@ -25,39 +34,56 @@ upload_directory = os.path.join(current_directory, 'uploads')
 if not os.path.exists(upload_directory):
     os.makedirs(upload_directory)
 
-
-# Validate Uploaded Files
-def allowed_file(filename):
-    """Check If File Extension Is Allowed."""
-    return '.' in filename and \
-           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
-
 # Endpoint for Processing Queries
 @app.route('/query', methods=['POST'])
 def query_endpoint():
     """Handle Query Requests and Provide LLM Responses."""
+    global final_response
+    global best_text_chunks
+    global best_table_chunks
+
+    final_response = ""
+
     try:
         query = request.form.get('query')
         complexity = request.form.get('complexity', 'Expert')
         if not query:
             return jsonify({'error': "No Query Provided."}), 400
 
-        # Process PDF Files and Extract Context
-        pdf_files = process_pdf_files(request.files.getlist('pdfFiles') if 'pdfFiles' in request.files else [])
+        complexity = request.form.get('complexity', 'Expert')
+        pdf_files = []
 
-        # Get Best Context Chunks for the Query
-        context = get_best_chunks(query)
+        print("Files Received:", request.files)
+        # Check for PDF Files in the Request
+        if 'pdfFiles' in request.files:
+            files = request.files.getlist('pdfFiles')
+            for file in files:
+                print("Processing File:", file.filename)
+                #process the file
+                if file and allowed_file(file.filename):
+                    filename = secure_filename(file.filename)
+                    file_path = os.path.join(upload_directory, filename)
+                    file.save(file_path)
+                    pdf_files.append(file_path)
+                    numFiles = extractCsv(file_path)
+                    store_tables("./", numFiles, filename)
+                    store_text(file_path, filename)
+                    # Debug print
+                    print("File Saved:", file_path)
+
+        best_text_chunks, best_table_chunks = get_best_chunks(query)
 
         def generate_responses():
             """Stream Responses to the Client."""
+            global final_response
             try:
-                for response_part in get_response(query, complexity, context):
+                for response_part in get_response(query, complexity, best_text_chunks, best_table_chunks):
                     # Check if the Response Part Is an Error
                     if isinstance(response_part, dict) and response_part.get('error'):
                         yield f"data: {json.dumps({'data': response_part})}\n\n"
                         break
                     else:
+                        final_response += response_part
                         yield json.dumps({'data': response_part}) + '\n\n'
             except Exception as e:
                 # Yield an Error Message if an Exception Occurs
@@ -68,22 +94,17 @@ def query_endpoint():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@app.route('/references', methods=['GET'])
+def query_references():
+    print("In References Endpoint")
 
-# Process PDF Files
-def process_pdf_files(pdf_files):
-    """Process PDF Files, Store Embeddings, and Extract Contexts."""
-    processed_files = []
-    for file in pdf_files:
-        if file and allowed_file(file.filename):
-            filename = secure_filename(file.filename)
-            file_path = os.path.join(upload_directory, filename)
-            file.save(file_path)
-            processed_files.append(file_path)
-            numFiles = extractCsv(file_path)
-            csvString = csvs_to_string_and_delete("./", numFiles)
-            store_embeddings(file_path, csvString)
-    return processed_files
+    references = find_references(best_text_chunks, final_response)
 
+    if not references:
+        return jsonify({'error': "No References Available"})
+
+    print(references)
+    return jsonify({'references': references})
 
 # Start the Server
 def start_server():

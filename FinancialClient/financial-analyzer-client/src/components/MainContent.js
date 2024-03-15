@@ -64,7 +64,13 @@ function formatTextWithLineBreaks(text) {
   text.replace(/\\n/g, '\n');
   return text.split('\n').map((line, index, array) => (
     <React.Fragment key={index}>
-      {line}
+      {line.split(/(\*\*[^*]+\*\*)/g).map((part, idx) => {
+        if (part.startsWith('**') && part.endsWith('**')) {
+          return <strong key={idx}>{part.slice(2, -2)}</strong>;
+        }
+        return part;
+      })}
+      
       {index !== array.length - 1 && <br />}
     </React.Fragment>
   ));
@@ -125,6 +131,7 @@ const MainContent = ({ messages, onOpenPdf }) => {
               <div>{formatTextWithLineBreaks(message.text)}</div>
             </MessageBox>
           )}
+          
           {message.files && message.files.map((fileName, fileIndex) => (
             
               <StyledButton startIcon={<PictureAsPdfIcon />} 
@@ -136,10 +143,7 @@ const MainContent = ({ messages, onOpenPdf }) => {
         </React.Fragment>
       ))}
       <div ref={endOfMessagesRef} />
-      
     </MainContentBox>
-    
-    
   );
 };
 

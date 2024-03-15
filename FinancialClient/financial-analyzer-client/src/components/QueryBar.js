@@ -157,6 +157,7 @@ const QueryBar = ({ addMessage, appendMessage, uploadPDF, clearPDF, uploadedPDFs
           const { done, value } = await reader.read();
           if (done) {
             setIsLoading(false);
+            fetchReferences();
             return;
           }
           result += decoder.decode(value, { stream: true });
@@ -198,6 +199,33 @@ const QueryBar = ({ addMessage, appendMessage, uploadPDF, clearPDF, uploadedPDFs
       textareaRef.current.value = '';
       setUploadedPDFs([]);
       setIsLoading(false);
+
+      
+    }
+  };
+
+  const fetchReferences = async () => {
+    try {
+      const referencesResponse = await fetch('http://127.0.0.1:5001/references');
+      if (!referencesResponse.ok) {
+        throw new Error('Error Fetching References.');
+      }
+  
+      const referencesData = await referencesResponse.json();
+      if (referencesData.error) {
+        console.error('Error in References Data:', referencesData.error);
+      } else {
+        referencesData.references.map((reference) => {
+          addMessage({ type: 'response', text: "Value **" + reference[0] + "**, found in **" + reference[1] +  "** in PDF "+ reference[2] });
+        });
+      }
+    } catch (error) {
+      console.error(`Error Fetching References: ${error}`);
+    } finally {
+      setIsLoading(false);
+      textareaRef.current.value = '';
+      setUploadedPDFs([]);
+
     }
   };
 
