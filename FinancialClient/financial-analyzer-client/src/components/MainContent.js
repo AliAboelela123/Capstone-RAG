@@ -61,19 +61,61 @@ const QueryBox = styled(Box)({
 });
 
 function formatTextWithLineBreaks(text) {
-  text.replace(/\\n/g, '\n');
-  return text.split('\n').map((line, index, array) => (
-    <React.Fragment key={index}>
-      {line.split(/(\*\*[^*]+\*\*)/g).map((part, idx) => {
-        if (part.startsWith('**') && part.endsWith('**')) {
-          return <strong key={idx}>{part.slice(2, -2)}</strong>;
-        }
-        return part;
-      })}
-      
-      {index !== array.length - 1 && <br />}
-    </React.Fragment>
-  ));
+  const rows = text.split('\n');
+  let isTable = false;
+
+  const tableData = rows.map(row => {
+    const columns = row.split(/\s{2,}|\s!\s/).filter(cell => cell);
+    if (columns.length > 1) {
+      isTable = true;
+    }
+    return columns;
+  });
+
+  if (!isTable) {
+    return text.split('\n').map((line, index, array) => (
+      <React.Fragment key={index}>
+        {line.split(/(\*\*[^*]+\*\*)/g).map((part, idx) => {
+          if (part.startsWith('**') && part.endsWith('**')) {
+            return <strong key={idx}>{part.slice(2, -2)}</strong>;
+          }
+          return part;
+        })}
+        
+        {index !== array.length - 1 && <br />}
+      </React.Fragment>
+    ));
+  }
+
+  const tableStyle = {
+    width: '100%',
+    borderCollapse: 'collapse',
+    marginBottom: '20px',
+  };
+
+  const cellStyle = {
+    border: '1px solid black',
+    padding: '8px',
+    textAlign: 'left',
+  };
+
+  return (
+    <table style={tableStyle}>
+      <tbody>
+        {tableData.map((row, rowIndex) => (
+          <tr key={rowIndex}>
+            {row.map((cell, cellIndex) => (
+              <td key={cellIndex} style={cellStyle}>
+                {cell.split(/(\*\*[^*]+\*\*)/g).map((part, idx) => (
+                  part.startsWith('**') && part.endsWith('**') ? <strong key={idx}>{part.slice(2, -2)}</strong> : part
+                ))}
+              </td>
+            ))}
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
 }
 
 const MainContent = ({ messages, onOpenPdf }) => {
