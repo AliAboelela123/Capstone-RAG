@@ -102,7 +102,6 @@ def query_references():
 
     if not references:
         return jsonify({'error': "No References Available"})
-
     return jsonify({'references': references})
 
 # Start the Server

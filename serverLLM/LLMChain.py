@@ -40,7 +40,7 @@ def construct_prompt(system_msg, context_msg, question):
     return "\n".join(prompt_parts)
 
 def get_response(query, complexity, text_chunks=None, table_chunks=None):
-    print("Prompting the LLM\n")
+    print("Prompting the LLM")
     system_msg = f"You are a friendly chatbot having a conversation with a human. You are an expert in finance and specifically trained on 10K data from Top 50 companies in 2022 and 2023. The user you are speaking with has a {complexity} understanding of finance."
     
     context_msg = ""
