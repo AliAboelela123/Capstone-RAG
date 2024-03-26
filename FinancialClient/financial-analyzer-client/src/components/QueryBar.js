@@ -158,6 +158,7 @@ const QueryBar = ({ addMessage, appendMessage, uploadPDF, clearPDF, uploadedPDFs
           if (done) {
             setIsLoading(false);
             fetchReferences();
+            fetchTables();
             return;
           }
           result += decoder.decode(value, { stream: true });
@@ -221,6 +222,29 @@ const QueryBar = ({ addMessage, appendMessage, uploadPDF, clearPDF, uploadedPDFs
       }
     } catch (error) {
       console.error(`Error Fetching References: ${error}`);
+    } finally {
+      setIsLoading(false);
+      textareaRef.current.value = '';
+      setUploadedPDFs([]);
+
+    }
+  };
+
+  const fetchTables = async () => {
+    try {
+      const tableResponse = await fetch('http://127.0.0.1:5001/extractedTable');
+      if (!tableResponse.ok) {
+        throw new Error('Error Fetching Tables.');
+      }
+  
+      const tableData = await tableResponse.json();
+      if (tableData.error) {
+        console.error('Error in Table Data:', tableData.error);
+      } else {
+        addMessage({ type: 'response', text: tableData.extractedTable });
+      }
+    } catch (error) {
+      console.error(`Error Fetching Data: ${error}`);
     } finally {
       setIsLoading(false);
       textareaRef.current.value = '';

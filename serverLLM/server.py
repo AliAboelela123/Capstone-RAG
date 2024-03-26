@@ -59,7 +59,7 @@ def query_endpoint():
             files = request.files.getlist('pdfFiles')
             for file in files:
                 print("Processing File:", file.filename)
-                #process the file
+                # Process the File
                 if file and allowed_file(file.filename):
                     filename = secure_filename(file.filename)
                     file_path = os.path.join(upload_directory, filename)
@@ -68,7 +68,7 @@ def query_endpoint():
                     numFiles = extractCsv(file_path)
                     store_tables("./", numFiles, filename)
                     store_text(file_path, filename)
-                    # Debug print
+                    # Debug Print
                     print("File Saved:", file_path)
 
         best_text_chunks, best_table_chunks = get_best_chunks(query)
@@ -105,6 +105,16 @@ def query_references():
 
     print(references)
     return jsonify({'references': references})
+
+@app.route('/extractedTable', methods=['GET'])
+def sendTable():
+    print("In Extracted Endpoint")
+
+    if not best_table_chunks[0].text:
+        return jsonify({'error': "No Tables Available"})
+    
+    print(best_table_chunks[0].text)
+    return jsonify({'extractedTable': best_table_chunks[0].text})
 
 # Start the Server
 def start_server():
