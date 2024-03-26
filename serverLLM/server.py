@@ -102,8 +102,6 @@ def query_references():
 
     if not references:
         return jsonify({'error': "No References Available"})
-
-    print(references)
     return jsonify({'references': references})
 
 @app.route('/extractedTable', methods=['GET'])

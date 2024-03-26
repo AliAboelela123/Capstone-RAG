@@ -5,7 +5,7 @@ class Chunk:
 
         Parameters:
         - uuid (str): uuid to identify the chunk
-        - text (str): The string representation of
+        - text (str): The string representation of the chunk
         - embedding (int): An integer vector associated with the chunk.
         - source (str): The name of the document this chunk originates from.
         """
@@ -28,4 +28,4 @@ class Chunk:
                 start = max(i - 10, 0)
                 end = min(i + 11, len(words))
                 return ' '.join(words[start:end])
-        return ""
+        return None
