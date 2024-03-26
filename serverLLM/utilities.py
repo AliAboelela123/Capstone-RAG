@@ -40,19 +40,37 @@ def extractCsv(file_path):
     # Return Number of Tables
     return len(df_list)
 
+def str_to_int(num_str):
+    # Remove commas from the string representation of the number
+    num_str_no_commas = num_str.replace(',', '')
+    # Convert the string to an integer
+    num_int = int(num_str_no_commas)
+    return num_int
+
+def check_duplicate_reference(references, str_match):
+    for ref in references:
+        print("Current reference tuple:", ref)
+        if ref[1] == str_match:
+            return True
+    return False
+
 def find_references(text_chunks, response):
     # Regular Expression to Find All Numbers
-    numbers = re.findall(r'\b\d+\b', response)
+    numbers = re.findall(r'\b\d{1,3}(?:,\d{3})*\b', response)
     # Filter Out Years
-    non_year_numbers = [num for num in numbers if not (num.startswith('19') or num.startswith('20')) or len(num) != 4]
+    non_year_numbers = [num for num in numbers if not ((num.startswith('19') or num.startswith('20')) and len(num) == 4) and (str_to_int(num)-31>0)]
 
     references = []
 
     for num in non_year_numbers:
         for chunk in text_chunks:
+            if len(references) > 4:
+                break
             if num in chunk.text:
-                reference = (num, chunk.find_reference(num), chunk.source)
-                references += [reference]
-    print("References")
-    print(references)
+                str_match = chunk.find_reference(num)
+                if str_match == None:
+                    continue
+                if check_duplicate_reference(references, str_match):
+                    continue
+                references.append((num, str_match, chunk.source))
     return references
