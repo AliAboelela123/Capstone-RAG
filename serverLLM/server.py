@@ -4,11 +4,14 @@ from waitress import serve
 from werkzeug.utils import secure_filename
 import os
 import json
+import openai
 
 from LLMChain import get_response
 from embeddings_db import get_best_chunks, store_text, store_tables
 from utilities import allowed_file, extractCsv, find_references
+from config import OPEN_AI_API_KEY
 
+openai.api_key = OPEN_AI_API_KEY
 
 #global variable for csv string
 combinedTables = ''
@@ -112,9 +115,24 @@ def sendTable():
 
     if not best_table_chunks[0].text:
         return jsonify({'error': "No Tables Available"})
-    
-    print(best_table_chunks[0].text)
-    return jsonify({'extractedTable': best_table_chunks[0].text})
+    prompt = "Please format to CSV and clean up the following table data:\n" + "\n\n".join(best_table_chunks[0].text)
+
+    try:
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": "You are a friendly chatbot having a conversation with a human."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0
+        )
+        formatted_tables = response.choices[0].message['content']
+        print("The formatted table after passing to GPT are: ",formatted_tables)
+        return jsonify({'formattedTables': formatted_tables})
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        return jsonify({'error': "Failed to format table."})
+
 
 # Start the Server
 def start_server():
