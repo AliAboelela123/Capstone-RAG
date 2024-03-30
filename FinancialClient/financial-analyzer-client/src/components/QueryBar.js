@@ -241,7 +241,7 @@ const QueryBar = ({ addMessage, appendMessage, uploadPDF, clearPDF, uploadedPDFs
       if (tableData.error) {
         console.error('Error in Table Data:', tableData.error);
       } else {
-        addMessage({ type: 'response', text: tableData.extractedTable });
+        addMessage({ type: 'response', text: tableData.formattedTables });
       }
     } catch (error) {
       console.error(`Error Fetching Data: ${error}`);

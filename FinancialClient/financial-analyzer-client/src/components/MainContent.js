@@ -61,16 +61,7 @@ const QueryBox = styled(Box)({
 });
 
 function formatTextWithLineBreaks(text) {
-  const rows = text.split('\n');
-  let isTable = false;
-
-  const tableData = rows.map(row => {
-    const columns = row.split(/\s{2,}|\s!\s/).filter(cell => cell);
-    if (columns.length > 1) {
-      isTable = true;
-    }
-    return columns;
-  });
+  const isTable = text.split('\n').some(row => row.includes(';'));
 
   if (!isTable) {
     return text.split('\n').map((line, index, array) => (
@@ -99,21 +90,22 @@ function formatTextWithLineBreaks(text) {
     textAlign: 'left',
   };
 
+  const headerStyle = {
+    ...cellStyle,
+    fontWeight: 'bold',
+    backgroundColor: '#f2f2f2',
+  };
+
+  
   return (
     <table style={tableStyle}>
-      <tbody>
-        {tableData.map((row, rowIndex) => (
-          <tr key={rowIndex}>
-            {row.map((cell, cellIndex) => (
-              <td key={cellIndex} style={cellStyle}>
-                {cell.split(/(\*\*[^*]+\*\*)/g).map((part, idx) => (
-                  part.startsWith('**') && part.endsWith('**') ? <strong key={idx}>{part.slice(2, -2)}</strong> : part
-                ))}
-              </td>
-            ))}
-          </tr>
-        ))}
-      </tbody>
+      {text.replace(/^```csv\n?|\n?```$/g, '').split('\n').map((row, rowIndex) => (
+        <tr key={rowIndex}>
+          {row.split(';').map((cell, cellIndex) => (
+            <td key={cellIndex} style={rowIndex === 0 ? headerStyle : cellStyle}>{cell}</td>
+          ))}
+        </tr>
+      ))}
     </table>
   );
 }
