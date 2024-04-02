@@ -43,6 +43,8 @@ def query_endpoint():
     global best_table_chunks
 
     final_response = ""
+    best_text_chunks = []
+    best_table_chunks = [] 
 
     try:
         query = request.form.get('query')

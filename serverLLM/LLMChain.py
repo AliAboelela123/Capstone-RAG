@@ -56,7 +56,7 @@ def get_response(query, complexity, text_chunks=None, table_chunks=None):
     
     try:
         response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
+            model="gpt-3.5-turbo-1106",
             messages=[
                 {"role": "system", "content": system_msg},
                 {"role": "user", "content": prompt}

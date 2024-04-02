@@ -136,9 +136,6 @@ const QueryBar = ({ addMessage, appendMessage, uploadPDF, clearPDF, uploadedPDFs
   
     setIsLoading(true);
     setIsLoadingApp(true);
-    
-    //TODO: Calculate TIME, value is in Milliseconds :D
-    setLoadingDuration(20000);
     let isFirstChunk = true;
 
     try {
@@ -148,7 +145,23 @@ const QueryBar = ({ addMessage, appendMessage, uploadPDF, clearPDF, uploadedPDFs
       // Append Text Query and complexity to formData
       formData.append('query', textareaRef.current.value.trim());
       formData.append('complexity', selectedLevel || 'Expert');
-  
+      
+      const totalSizeKB = uploadedPDFs.reduce((acc, file) => acc + (file.size / 1024), 0);
+      console.log(totalSizeKB)
+      
+      if (totalSizeKB > 1)
+      {
+        if (totalSizeKB > 2500)
+        {
+          setLoadingDuration(55000);
+        }
+        else
+        {
+          const durationSeconds = -0.0000104612 * (totalSizeKB ** 2) + 0.048071 * totalSizeKB + 0.8854
+          setLoadingDuration(durationSeconds * 1000)
+        }
+      }
+      
       // Append PDF Files to formData
       uploadedPDFs.forEach((file) => {
         formData.append('pdfFiles', file, file.name);
@@ -208,6 +221,7 @@ const QueryBar = ({ addMessage, appendMessage, uploadPDF, clearPDF, uploadedPDFs
   
         read();
       } else {
+        addMessage({ type: 'response', text: "The Financial LLM Analyzer is currently down at the moment. Sorry for the inconvenience, try again later." });
         throw new Error('Server Responded with an Error.');
       }
     } catch (error) {

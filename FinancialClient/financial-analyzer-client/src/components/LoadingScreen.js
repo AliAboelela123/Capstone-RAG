@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Box, CircularProgress, Typography } from '@mui/material';
 
 const stages = [
+  { progress: 0, message: "Sending Query to Server..."},
   { progress: 10, message: "Sending PDF to Server..." },
   { progress: 20, message: "Extracting PDF..." },
   { progress: 30, message: "Analyzing PDF..." },
@@ -43,7 +44,7 @@ const LoadingScreen = ({ isLoading, timerDuration = 10000 }) => {
       flexDirection="column"
       justifyContent="center"
       alignItems="center"
-      bgcolor="rgba(255, 255, 255, 0.7)"
+      bgcolor="rgba(255, 255, 255, 0.85)"
       zIndex="modal"
     >
       <CircularProgress color="inherit" />
