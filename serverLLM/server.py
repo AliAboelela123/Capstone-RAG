@@ -4,11 +4,14 @@ from waitress import serve
 from werkzeug.utils import secure_filename
 import os
 import json
+import openai
 
 from LLMChain import get_response
 from embeddings_db import get_best_chunks, store_text, store_tables
 from utilities import allowed_file, extractCsv, find_references
+from config import OPEN_AI_API_KEY
 
+openai.api_key = OPEN_AI_API_KEY
 
 #global variable for csv string
 combinedTables = ''
@@ -110,9 +113,32 @@ def sendTable():
 
     if not best_table_chunks[0].text:
         return jsonify({'error': "No Tables Available"})
-    
-    print(best_table_chunks[0].text)
-    return jsonify({'extractedTable': best_table_chunks[0].text})
+    prompt = """
+    I have extracted some table data from a PDF that needs cleaning and formatting before it can be analyzed. Your task is to format this data into a clean CSV format. Here are some specific instructions to follow:
+
+    1. Use semicolons (;) instead of commas (,) to separate the values.
+    2. Ensure that the headers are properly formatted. For date columns, use standard date formats. For other headers, ensure they are descriptive and capitalized correctly.
+    3. Remove any values that appear incorrect or out of place, such as random symbols (e.g., "!").
+    4. If the data does not seem suitable for tabular representation or if the formatting is too corrupted to fix, please return an empty string.
+
+    Here is the table data:
+    """ + "\n\n".join(best_table_chunks[0].text)
+    try:
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": "You are a string to CSV converter chatbot for Financial Tables."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0
+        )
+        formatted_tables = response.choices[0].message['content']
+        print("The Formatted Table After Passing to GPT are: ",formatted_tables)
+        return jsonify({'formattedTables': formatted_tables})
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        return jsonify({'error': "Failed to format table."})
+
 
 # Start the Server
 def start_server():
