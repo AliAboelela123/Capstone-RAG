@@ -154,32 +154,32 @@ def probabilistic_algorithm(similarities_dict, num_chunks):
 
 def get_best_chunks(query, algorithm=ALGORITHM, num_chunks=NUM_CHUNKS):
     print("Calculating Best Chunks")
-    # Selects Chunks based on Cosine Similarities
-    query_vector = get_embedding(query)
-
-    # Ensure query_vector is a 2D Array Before cosine_similarity
-    data_array = np.array(query_vector)
-    query_vector = data_array.reshape(1, -1)
-
-    # Extract the List of Vectors and UUIDs from the vector_index
-    text_embeddings = [Chunk.embedding for _, Chunk in text_db.items()]
-    text_uuids = [text_uuid for text_uuid, _ in text_db.items()]
-
-    table_embeddings = [Chunk.embedding for _, Chunk in tables_db.items()]
-    table_uuids = [table_uuid for table_uuid, _ in tables_db.items()]
-
-    # Compute Cosine Similarities
-    text_similarities = cosine_similarity(query_vector, text_embeddings)
-    table_similarities = cosine_similarity(query_vector, table_embeddings)
-
-    # Create a Dictionary to Associate UUIDs with Cosine Similarities
-    text_similarities_dict = {uuid: similarity for uuid, similarity in zip(text_uuids, text_similarities[0])}
-    table_similarities_dict = {uuid: similarity for uuid, similarity in zip(table_uuids, table_similarities[0])}
-
-    best_text_uuids = []
-    best_table_uuids = []
 
     try:
+        # Selects Chunks based on Cosine Similarities
+        query_vector = get_embedding(query)
+
+        # Ensure query_vector is a 2D Array Before cosine_similarity
+        data_array = np.array(query_vector)
+        query_vector = data_array.reshape(1, -1)
+
+        # Extract the List of Vectors and UUIDs from the vector_index
+        text_embeddings = [Chunk.embedding for _, Chunk in text_db.items()]
+        text_uuids = [text_uuid for text_uuid, _ in text_db.items()]
+        table_embeddings = [Chunk.embedding for _, Chunk in tables_db.items()]
+        table_uuids = [table_uuid for table_uuid, _ in tables_db.items()]
+
+        # Compute Cosine Similarities
+        text_similarities = cosine_similarity(query_vector, text_embeddings)
+        table_similarities = cosine_similarity(query_vector, table_embeddings)
+
+        # Create a Dictionary to Associate UUIDs with Cosine Similarities
+        text_similarities_dict = {uuid: similarity for uuid, similarity in zip(text_uuids, text_similarities[0])}
+        table_similarities_dict = {uuid: similarity for uuid, similarity in zip(table_uuids, table_similarities[0])}
+
+        best_text_uuids = []
+        best_table_uuids = []
+
         if algorithm == 'G':
             best_text_uuids = greedy_algorithm(text_similarities_dict, num_chunks)
             best_table_uuids = greedy_algorithm(table_similarities_dict, num_chunks)
@@ -188,7 +188,7 @@ def get_best_chunks(query, algorithm=ALGORITHM, num_chunks=NUM_CHUNKS):
             best_table_uuids = probabilistic_algorithm(table_similarities_dict, num_chunks)
     except ValueError as e:
         print(f"An Exception Occurred While Getting Best Chunk: {e}")
-        return "An Error Occurred While Processing the Documents. Please Try Again."
+        return [], []
 
     print("Done Finding Best Chunks")
     return [text_db[uuid] for uuid in best_text_uuids], [tables_db[uuid] for uuid in best_table_uuids]
