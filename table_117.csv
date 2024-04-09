@@ -1,0 +1,15 @@
+FairValuationFinancial InstrumentValueTechnique,Significant UnobservableRanges ofWeightedInputsInputsAverage (1),Unnamed: 0,Unnamed: 1,Unnamed: 2,Unnamed: 3
+Loans and Securities (2),,,,,
+"Instruments backed by residential real estate assetsTrading account assets – Mortgage trading loans, MBS and ABSLoans and leasesAFS debt securities - Non-agency residentialOther debt securities carried at fair value - Non-agency residential",$852338137258119,"Discounted cashflow, Marketcomparables",YieldPrepayment speedDefault ratePriceLoss severity,0% to 25%0% to 29% CPR0% to 3% CDR$0 to $1110% to 100%,10%12% CPR1% CDR$2624%
+"Instruments backed by commercial real estate assetsTrading account assets – Corporate securities, trading loans and otherTrading account assets – Mortgage trading loans, MBS and ABSLoans held-for-sale",$362292664,Discounted cashflow,YieldPrice,0% to 25%$0 to $100,10%$75
+"Commercial loans, debt securities and otherTrading account assets – Corporate securities, trading loans and otherTrading account assets – Non-U.S. sovereign debtTrading account assets – Mortgage trading loans, MBS and ABSAFS debt securities – Tax-exempt securitiesAFS debt securities – Non-U.S. and other taxable securitiesLoans and leasesLoans held-for-sale","$4,3482,0925181,14851195116228","Discounted cashflow, Marketcomparables",YieldPrepayment speedDefault rateLoss severityPrice,5% to 43%10% to 20%3% to 4%35% to 40%$0 to $157,15%15%4%38%$75
+"Other assets, primarily auction rate securities",$779,"Discounted cashflow, Marketcomparables",PriceDiscount rate,$10 to $9711%,$94n/a
+MSRs,"$1,020",Discounted cashflow,"Weighted-average life, fixed rate (5)Weighted-average life, variable rate (5)Option-adjusted spread, fixed rateOption-adjusted spread, variable rate",0 to 14 years0 to 12 years7% to 14%9% to 15%,6 years4 years9%12%
+Structured liabilities,,,,,
+Long-term debt,$(862),"Discounted cashflow, Marketcomparables,Industry standardderivative pricing (3)",YieldEquity correlationPriceNatural gas forward price,22% to 43%0% to 95%$0 to $119$3/MMBtu to $13/MMBtu,23%69%$90$9/MMBtu
+Net derivative assets (liabilities),,,,,
+Credit derivatives,$(44),"Discounted cashflow, Stochasticrecovery correlationmodel",Credit spreadsUpfront pointsPrepayment speedDefault rateCredit correlationPrice,3 to 63 bps0 to 100 points15% CPR2% CDR18% to 53%$0 to $151,22 bps83 pointsn/an/a44%$63
+Equity derivatives,"$(1,534)",Industry standardderivative pricing (3),Equity correlationLong-dated equity volatilities,0% to 100%4% to 101%,73%44%
+Commodity derivatives,$(291),"Discounted cashflow, Industrystandard derivativepricing (3)",Natural gas forward pricePower forward price,$3/MMBtu to $13/MMBtu$9 to $123,$8/MMBtu$43
+Interest rate derivatives,"$(1,024)",Industry standardderivative pricing (4),Correlation (IR/IR)Correlation (FX/IR)Long-dated inflation ratesLong-dated inflation volatilitiesInterest rates volatilities,(35)% to 89%11% to 58%G0% to 39%0% to 5%0% to 2%,67%43%1%2%1%
+Total net derivative assets (liabilities),"$(2,893)",,,,

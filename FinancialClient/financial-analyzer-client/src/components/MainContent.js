@@ -171,7 +171,7 @@ const MainContent = ({ messages, onOpenPdf }) => {
               <StyledButton startIcon={<PictureAsPdfIcon />} 
                 onClick={() => handleOpenPdf(fileName)}
               >
-                {message.fileName}
+                {message.fileName[fileIndex]}
               </StyledButton>
           ))}
         </React.Fragment>

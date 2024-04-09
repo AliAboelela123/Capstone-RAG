@@ -122,20 +122,22 @@ def sendTable():
     2. Ensure that the headers are properly formatted. For date columns, use standard date formats. For other headers, ensure they are descriptive and capitalized correctly.
     3. Remove any values that appear incorrect or out of place, such as random symbols (e.g., "!").
     4. If the data does not seem suitable for tabular representation or if the formatting is too corrupted to fix, please return an empty string.
+    5. Do not return ANYTHING other than tabular data. No 'I can help you format this table data into a clean CSV format. Here is the cleaned and formatted data:' and other variations at all. Only return the CSV.
+    6. Transpose the table if need be such that the table never has more columns than rows.
 
     Here is the table data:
     """ + "\n\n".join(best_table_chunks[0].text)
     try:
         response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
+            model="gpt-3.5-turbo-1106",
             messages=[
-                {"role": "system", "content": "You are a string to CSV converter chatbot for Financial Tables."},
+                {"role": "system", "content": "You are a string to CSV converter chatbot for Financial Tables. Please follow the Prompt instructions. Do not return ANYTHING other than tabular data. No 'I can help you format this table data into a clean CSV format. Here is the cleaned and formatted data:' and other variations at all. Only return the CSV."},
                 {"role": "user", "content": prompt}
             ],
             temperature=0
         )
         formatted_tables = response.choices[0].message['content']
-        print("The Formatted Table After Passing to GPT are: ",formatted_tables)
+        print("The Formatted Table After Passing to GPT are: ", formatted_tables)
         return jsonify({'formattedTables': formatted_tables})
     except Exception as e:
         print(f"An error occurred: {e}")
