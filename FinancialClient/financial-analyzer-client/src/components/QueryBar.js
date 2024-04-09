@@ -272,8 +272,8 @@ const QueryBar = ({ addMessage, appendMessage, uploadPDF, clearPDF, uploadedPDFs
       if (tableData.error) {
         console.error('Error in Table Data:', tableData.error);
       } else {
-        if (tableData.extractedTable.includes('!')) {
-          addMessage({ type: 'response', text: tableData.extractedTable });
+        if (tableData.formattedTables.includes(';')) {
+          addMessage({ type: 'response', text: tableData.formattedTables });
         }
       }
     } catch (error) {
