@@ -1,47 +1,80 @@
 import openai
 from langchain.chat_models import ChatOpenAI
+from langchain.memory import ConversationBufferMemory
 
 from config import OPEN_AI_API_KEY
 
 # LLM
 llm = ChatOpenAI(model_name="gpt-3.5-turbo",temperature=0, openai_api_key=OPEN_AI_API_KEY,streaming=True,verbose=True)
+memory = ConversationBufferMemory(memory_key="chat_history", input_key="question", return_messages=True)
+
 chat_history = []
 
-def construct_prompt(system_msg, context_msg, question):
+def estimateTokenCount(text):
+    return len(text) / 6
+
+def truncateChatHistory(chat_history, max_tokens, current_tokens):
+    truncatedHistory = []
+    totalTokens = current_tokens
+    for message in reversed(chat_history):
+        message_text = f"{message['role']}: {message['content']}"
+        messageTokens = estimateTokenCount(message_text)
+        if totalTokens + messageTokens <= max_tokens:
+            truncatedHistory.insert(0, message)
+            totalTokens += messageTokens
+        else:
+            break
+    return truncatedHistory
+
+def construct_prompt(system_msg, context_msg, question, chat_history):
     """
     Constructs the Chat Prompt with System Messages, Context, and the User Question,
     Including a Dynamically Calculated Portion of the Chat History.
     """
-    print(context_msg)
-    # Calculate Word Count for Fixed Inputs
-    fixed_parts_word_count = len(system_msg.split()) + len(context_msg.split()) + len(question.split())
-    remaining_word_budget = 3500 - fixed_parts_word_count
+    basePrompt = f"System Message: {system_msg}\nContext Message: {context_msg}\nQuestion: {question}. Make the response detailed and utilize financial numbers.\n"
+    baseTokens = estimateTokenCount(basePrompt)
+    
+    adjustedChatHistory = truncateChatHistory(chat_history, 16385 - baseTokens, baseTokens)
+    chatHistoryText = "\n".join([f"{msg['role']}: {msg['content']}" for msg in adjustedChatHistory])    
+    prompt = basePrompt + "Chat History:\n" + chatHistoryText
 
-    # Determine the # of Chat Entries to Consider
-    num_entries_to_consider = min(len(chat_history), 10)
+    return prompt
 
-    # Calculate Words Per Entry
-    words_per_entry = max(remaining_word_budget // max(num_entries_to_consider, 1), 1)
+    # print(context_msg)
+    # # Calculate Word Count for Fixed Inputs
+    # fixed_parts_word_count = len(system_msg.split()) + len(context_msg.split()) + len(question.split())
+    # remaining_word_budget = 3500 - fixed_parts_word_count
 
-    # Process Chat History
-    processed_chat_history = []
-    for entry in chat_history[-num_entries_to_consider:]:
-        entry_words = entry.split()
-        processed_entry = " ".join(entry_words[:words_per_entry])
-        processed_chat_history.append(processed_entry)
+    # # Determine the # of Chat Entries to Consider
+    # num_entries_to_consider = min(len(chat_history), 10)
 
-    # Combine Prompt and Return
-    prompt_parts = [
-        f"System Message: {system_msg}\n",
-        f"Context Message: {context_msg}\n" if context_msg else "",
-        f"Question: {question}\n",
-        "Chat History:\n" + "\n".join(processed_chat_history),
-    ]
-    return "\n".join(prompt_parts)
+    # # Calculate Words Per Entry
+    # words_per_entry = max(remaining_word_budget // max(num_entries_to_consider, 1), 1)
+
+    # # Process Chat History
+    # processed_chat_history = []
+    # for entry in chat_history[-num_entries_to_consider:]:
+    #     entry_words = entry.split()
+    #     processed_entry = " ".join(entry_words[:words_per_entry])
+    #     processed_chat_history.append(processed_entry)
+
+    # # Combine Prompt and Return
+    # prompt_parts = [
+    #     f"System Message: {system_msg}\n",
+    #     f"Context Message: {context_msg}\n" if context_msg else "",
+    #     f"Question: {question}\n",
+    #     "Chat History:\n" + "\n".join(processed_chat_history),
+    # ]
+    # return "\n".join(prompt_parts)
 
 def get_response(query, complexity, text_chunks=None, table_chunks=None):
     print("Prompting the LLM")
-    system_msg = f"You are a friendly chatbot having a conversation with a human. You are an expert in finance and specifically trained on 10K data from Top 50 companies in 2022 and 2023. The user you are speaking with has a {complexity} understanding of finance."
+    system_msg = (
+        f"You are a friendly chatbot having a conversation with a human. "
+        f"You are an expert in finance and specifically trained on 10K data from Top 50 companies in 2022 and 2023. "
+        f"The user you are speaking with has a {complexity} understanding of finance so format your answer accordingly. "
+        "Try and include financial numbers if you can in your answers when possible."
+    )
     
     context_msg = ""
     if text_chunks:
@@ -49,10 +82,11 @@ def get_response(query, complexity, text_chunks=None, table_chunks=None):
             [f"<CHUNK {i}> {text_chunk.text}" for i, text_chunk in enumerate(text_chunks)]) + "\n<END_OF_EXCERPTS>\n"
     
     if table_chunks:
-        context_msg += "\n The following table(s) extracted from the document may be relevant to the user query\n" + "\n".join(
+        context_msg += "\n The following table(s) extracted from the PDF document may be relevant to the user query\n" + "\n".join(
             [f"<Table {i}> \n {table_chunk.text}" for i, table_chunk in enumerate(table_chunks)]) + "\n<END_OF_TABLES>"
 
-    prompt = construct_prompt(system_msg, context_msg, query)
+    chat_history.append({"role": "user", "content": query})
+    prompt = construct_prompt(system_msg, context_msg, query, chat_history)
     
     try:
         response = openai.ChatCompletion.create(
@@ -64,11 +98,13 @@ def get_response(query, complexity, text_chunks=None, table_chunks=None):
             temperature=0,
             stream=True
         )
-        
+
         # Adds Chunk Sizing and Streaming
         for chunk in response:
             if 'choices' in chunk and len(chunk['choices']) > 0 and 'content' in chunk['choices'][0]['delta']:
-                yield chunk['choices'][0]['delta']['content']
+                content = chunk['choices'][0]['delta']['content']
+                chat_history.append({"role": "assistant", "content": content})
+                yield content
             if 'choices' in chunk and len(chunk['choices']) > 0 and 'finish_reason' in chunk['choices'][0]['delta']:
                 break
 
