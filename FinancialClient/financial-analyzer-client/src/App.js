@@ -72,7 +72,7 @@ const App = () => {
       <LoadingScreen isLoading={isLoading} timerDuration={loadingDuration} />
       <div className="app">
         <Header selectedLevel={selectedLevel} setSelectedLevel={setSelectedLevel} />
-        <Box sx={{ display: 'flex', width: '100%' }}>
+        <Box sx={{ display: 'flex', width: '100%', height: '81%' }}>
           <MainContent messages={messages} onOpenPdf={handleOpenPdf} />
           {isPdfOpen && (
             <Box sx={{ width: '50%' }}>
